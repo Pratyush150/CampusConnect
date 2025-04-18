@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  college   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts                Post[] // ✅ Posts created by the user
+  resources            Resource[] // ✅ Resources uploaded by the user
+  events               Event[] // ✅ Events created by the user
+  mentors              Mentor[] // ✅ If user is a mentor
+  followed             Follow[]      @relation("Follower") // ✅ Users this user follows
+  following            Follow[]      @relation("Following") // ✅ Users following this user
+  appliedOpportunities Opportunity[] @relation("AppliedOpportunities") // ✅ Opportunities applied to
+  savedOpportunities   Opportunity[] @relation("SavedOpportunities") // ✅ Opportunities saved by the user
+  postedOpportunities  Opportunity[] @relation("PostedOpportunities") // ✅ Opportunities posted by the user
+
+  // ✅ Missing back-relations added here:
+  conversations Conversation[] @relation("ConversationParticipants")
+  messagesSent  Message[]      @relation("UserMessagesSent")
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  content   String
+  image     String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Resource {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String
+  subject     String
+  uploadedBy  User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  date        DateTime
+  location    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Mentor {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  bio         String
+  category    String
+  subcategory String
+  verified    Boolean  @default(false)
+  linkedin    String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Opportunity {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  domain      String // e.g., Web Dev, Data Science
+  type        String // Internship or Freelance
+  link        String // External application link
+  postedBy    User     @relation("PostedOpportunities", fields: [postedById], references: [id])
+  postedById  String
+  applicants  User[]   @relation("AppliedOpportunities")
+  savedBy     User[]   @relation("SavedOpportunities")
+  createdAt   DateTime @default(now())
+}
+
+model Conversation {
+  id           String    @id @default(cuid())
+  participants User[]    @relation("ConversationParticipants") // Users involved in this conversation
+  messages     Message[] // Messages sent within this conversation
+  createdAt    DateTime  @default(now()) // When the conversation started
+  updatedAt    DateTime  @updatedAt // When the conversation was last updated
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String // Content of the message
+  senderId       String // ID of the user who sent the message
+  sender         User         @relation("UserMessagesSent", fields: [senderId], references: [id])
+  conversationId String // ID of the conversation this message belongs to
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  createdAt      DateTime     @default(now()) // When the message was sent
+}
+
+model CampusWall {
+  id         Int      @id @default(autoincrement())
+  user_name  String
+  college    String
+  content    String
+  created_at DateTime @default(now())
+}
