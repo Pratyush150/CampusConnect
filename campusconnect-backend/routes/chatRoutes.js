@@ -1,19 +1,24 @@
-// routes/chatRoutes.js
 import express from 'express';
-import * as chatController from '../controllers/chatController.js';
+import {
+  createConversation,
+  getConversationsByUser,
+  sendMessage,
+  getMessages,
+  markMessageAsSeen,
+  handleFileUpload
+} from '../controllers/chatController.js';
+
+import uploadMiddleware from '../middleware/uploadMiddleware.js'; // if using multer
 
 const router = express.Router();
 
-// Create new conversation
-router.post('/conversations', chatController.createConversation);
+router.post('/conversations', createConversation);
+router.get('/conversations/:userId', getConversationsByUser);
 
-// Get conversations for a user
-router.get('/conversations/:userId', chatController.getConversationsByUser);
+router.post('/messages', sendMessage);
+router.get('/messages', getMessages); // expects ?conversationId=xyz
+router.post('/messages/:id/seen', markMessageAsSeen);
 
-// Send new message
-router.post('/messages', chatController.sendMessage);
-
-// Get messages of a conversation
-router.get('/messages', chatController.getMessages);
+router.post('/upload', uploadMiddleware.single('file'), handleFileUpload);
 
 export default router;

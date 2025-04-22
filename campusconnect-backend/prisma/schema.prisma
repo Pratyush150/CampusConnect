@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // Railway prod or fallback to local
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -13,22 +13,22 @@ model User {
   email                 String            @unique
   password              String
   college               String?
-  collegeIDPath         String? 
+  collegeIDPath         String?
   collegeIdImage        String?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
-  posts                 Post[]            // Posts created by the user
-  resources             Resource[]        // Resources uploaded by the user
-  events                Event[]           // Events created by the user
-  mentors               Mentor[]          // If user is a mentor
-  followed              Follow[]          @relation("Follower") // Users this user follows
-  following             Follow[]          @relation("Following") // Users following this user
-  appliedOpportunities  Opportunity[]     @relation("AppliedOpportunities") // Opportunities applied to
-  savedOpportunities    Opportunity[]     @relation("SavedOpportunities") // Opportunities saved by the user
-  postedOpportunities   Opportunity[]     @relation("PostedOpportunities") // Opportunities posted by the user
-  conversations         Conversation[]    @relation("ConversationParticipants") // Conversations the user is part of
-  messagesSent          Message[]         @relation("UserMessagesSent") // Messages sent by the user
-  campusWalls           CampusWall[]      // Added relation to CampusWall
+  posts                 Post[]
+  resources             Resource[]
+  events                Event[]
+  mentors               Mentor[]
+  followed              Follow[]          @relation("Follower")
+  following             Follow[]          @relation("Following")
+  appliedOpportunities  Opportunity[]     @relation("AppliedOpportunities")
+  savedOpportunities    Opportunity[]     @relation("SavedOpportunities")
+  postedOpportunities   Opportunity[]     @relation("PostedOpportunities")
+  conversations         Conversation[]    @relation("ConversationParticipants")
+  messagesSent          Message[]         @relation("UserMessagesSent")
+  campusWalls           CampusWall[]
 }
 
 model Post {
@@ -86,55 +86,64 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  @@unique([followerId, followingId]) // Ensures uniqueness between follower and following pair
+  @@unique([followerId, followingId])
 }
 
 model Opportunity {
   id          String   @id @default(cuid())
   title       String
   description String
-  domain      String  // e.g., Web Dev, Data Science
-  type        String  // Internship or Freelance
-  link        String  // External application link
-  postedBy    User    @relation("PostedOpportunities", fields: [postedById], references: [id])
+  domain      String
+  type        String
+  link        String
+  postedBy    User     @relation("PostedOpportunities", fields: [postedById], references: [id])
   postedById  String
-  applicants  User[]  @relation("AppliedOpportunities")
-  savedBy     User[]  @relation("SavedOpportunities")
+  applicants  User[]   @relation("AppliedOpportunities")
+  savedBy     User[]   @relation("SavedOpportunities")
   createdAt   DateTime @default(now())
 }
 
 model Conversation {
-  id           String    @id @default(cuid())
-  participants User[]    @relation("ConversationParticipants") // Users involved in this conversation
-  messages     Message[] // Messages sent within this conversation
-  createdAt    DateTime  @default(now()) // When the conversation started
-  updatedAt    DateTime  @updatedAt // When the conversation was last updated
+  id           String       @id @default(cuid())
+  participants User[]       @relation("ConversationParticipants")
+  messages     Message[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 model Message {
   id             String       @id @default(cuid())
-  content        String       // Content of the message
-  senderId       String       // ID of the user who sent the message
+  content        String?
+  fileUrl        String?      // For image/file messages
+  type           MessageType  @default(TEXT)
+  isSeen         Boolean      @default(false)
+  senderId       String
   sender         User         @relation("UserMessagesSent", fields: [senderId], references: [id])
-  conversationId String       // ID of the conversation this message belongs to
+  conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
-  createdAt      DateTime     @default(now()) // When the message was sent
+  createdAt      DateTime     @default(now())
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
 }
 
 model CampusWall {
   id         Int      @id @default(autoincrement())
   userId     String
-  user       User     @relation(fields: [userId], references: [id]) // Related user
+  user       User     @relation(fields: [userId], references: [id])
   college    String
   content    String
   createdAt  DateTime @default(now())
 }
 
 model College {
-  id          Int      @id @default(autoincrement())
-  name        String
-  location    Json     // Store as GeoJSON format (or use a custom PostGIS type for better performance)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  name      String
+  location  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
