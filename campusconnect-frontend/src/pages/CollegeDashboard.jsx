@@ -12,7 +12,7 @@ import MentorMap from "@/components/MentorMap";
 import InternshipHub from "@/components/InternshipHub";
 import Leaderboard from "@/components/Leaderboard";
 import RealTimeChat from "@/components/RealTimeChat";
-import ChatBot from "@/components/ChatBot";
+import ChatBot from "@/components/Chatbot";
 import PostCard from "@/components/PostCard";
 
 const CollegeDashboard = () => {
