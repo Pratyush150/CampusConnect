@@ -1,4 +1,3 @@
-// src/pages/Signup.jsx
 import React, { useState } from 'react';
 import API from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -18,33 +17,34 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Handle input change for form data
   const handleChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Handle file upload for college ID image
   const handleIDUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setCollegeID(file);
-      setPreview(URL.createObjectURL(file));
+      setPreview(URL.createObjectURL(file));  // Show image preview
     }
   };
 
+  // Validate the form before submission
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.password) {
+    if (!formData.name || !formData.email || !formData.password || !formData.college) {
       setError('Please fill all required fields.');
       return false;
     }
     return true;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError('');  // Reset error message
+    setLoading(true);  // Set loading state to true
 
     if (!validateForm()) {
       setLoading(false);
@@ -53,15 +53,15 @@ const Signup = () => {
 
     const data = new FormData();
     Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-    if (collegeID) data.append('collegeID', collegeID);
+    if (collegeID) data.append('collegeIdImage', collegeID); // Correct field name for file upload
 
     try {
-      await API.post('/signup', data);
-      navigate('/profile');
+      await API.post('/auth/register', data);  // Send form data to backend API
+      navigate('/profile');  // Navigate to the profile page after successful signup
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during sign-up.');
     } finally {
-      setLoading(false);
+      setLoading(false);  // Set loading state back to false
     }
   };
 
@@ -71,9 +71,9 @@ const Signup = () => {
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} autoComplete="off">
-        {['name', 'email', 'password', 'college'].map((field, idx) => (
+        {['name', 'email', 'password', 'college'].map((field) => (
           <input
-            key={idx}
+            key={field}
             type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
             name={field}
             value={formData[field]}
@@ -108,6 +108,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
 
 
 

@@ -1,41 +1,60 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import cloudinary from "../utils/cloudinaryConfig.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const prisma = new PrismaClient();
-const saltRounds = 10;
+const SALT_ROUNDS = 10;
 
-// @desc    Register new user
-// @route   POST /api/auth/register
+const generateToken = (userId, expiresIn = "1h") => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn });
+};
+
+// REGISTER
 export const registerUser = async (req, res) => {
   const { name, email, password, college } = req.body;
-  const collegeIDFile = req.file; // multer handles this (optional)
+  const collegeIDFile = req.file;
 
   try {
-    // 1. Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) return res.status(400).json({ message: "User already exists" });
+    if (existingUser)
+      return res.status(400).json({ message: "User already exists" });
 
-    // 2. Hash the password
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    const verificationToken = generateToken(email, "15m");
 
-    // 3. Create new user in DB with optional college ID
+    let uploadedImageUrl = null;
+    if (collegeIDFile) {
+      const result = await cloudinary.uploader.upload(collegeIDFile.path, {
+        folder: "CampusConnect/collegeIds",
+        public_id: `${Date.now()}_collegeId`,
+      });
+      uploadedImageUrl = result.secure_url;
+    }
+
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
         college,
-        collegeIDPath: collegeIDFile?.path || null,
+        collegeIdImage: uploadedImageUrl,
+        role: "USER",
+        isVerified: false,
+        verificationToken,
       },
     });
 
-    // 4. Remove password before sending response
-    const { password: _, ...userWithoutPassword } = newUser;
+    await sendEmail(
+      email,
+      "Verify your CampusConnect account",
+      `Click to verify: https://yourdomain.com/verify/${verificationToken}`
+    );
 
-    // 5. Return response
+    const { password: _, ...userWithoutPassword } = newUser;
     res.status(201).json({
-      message: "User registered successfully",
+      message: "User registered. Please verify your email.",
       user: userWithoutPassword,
     });
   } catch (error) {
@@ -44,35 +63,83 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
+// VERIFY EMAIL
+export const verifyEmail = async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const email = decoded.userId;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    await prisma.user.update({
+      where: { email },
+      data: { isVerified: true, verificationToken: null },
+    });
+
+    res.status(200).json({ message: "Email verified successfully" });
+  } catch (err) {
+    res.status(400).json({ message: "Invalid or expired token" });
+  }
+};
+
+// LOGIN
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // 1. Check if user exists
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user.isVerified)
+      return res.status(401).json({ message: "Email not verified" });
 
-    // 2. Validate password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    // 3. Generate token
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    const accessToken = generateToken(user.id, "1h");
+    const refreshToken = generateToken(user.id, "7d");
 
-    // 4. Exclude password
-    const { password: _, ...userWithoutPassword } = user;
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { refreshToken },
+    });
 
-    // 5. Return token + user
+    const { password: _, refreshToken: __, ...userWithoutSensitive } = user;
     res.status(200).json({
       message: "Login successful",
-      token,
-      user: userWithoutPassword,
+      token: accessToken,
+      refreshToken,
+      user: userWithoutSensitive,
     });
   } catch (error) {
     console.error("Login Error:", error.message);
     res.status(500).json({ message: "Server error during login" });
   }
 };
+
+// REFRESH TOKEN
+export const refreshAccessToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken)
+    return res.status(401).json({ message: "No refresh token provided" });
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(403).json({ message: "Invalid refresh token" });
+    }
+
+    const newAccessToken = generateToken(user.id, "1h");
+    res.status(200).json({ token: newAccessToken });
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired refresh token" });
+  }
+};
+
 

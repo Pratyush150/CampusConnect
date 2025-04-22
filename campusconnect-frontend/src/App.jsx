@@ -16,9 +16,9 @@ const AppWithAuthCheck = () => {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      setUser(getAuthToken());
+      setUser(getAuthToken());  // Set authenticated user info
     } else {
-      setUser(null);
+      setUser(null);  // Clear user if not authenticated
     }
   }, [setUser]);
 
@@ -36,6 +36,7 @@ const AppWithAuthCheck = () => {
   );
 };
 
+// Main App component wrapped with AuthProvider to provide authentication context
 const App = () => (
   <AuthProvider>
     <Router>
@@ -45,6 +46,7 @@ const App = () => (
 );
 
 export default App;
+
 
 
 

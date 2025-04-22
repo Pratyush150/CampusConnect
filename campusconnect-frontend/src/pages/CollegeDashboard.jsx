@@ -26,12 +26,12 @@ const CollegeDashboard = () => {
   const [eventFilter, setEventFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [chatbotOpen, setChatbotOpen] = useState(false);
-  const [loading, setLoading] = useState(true);  // Loading state for fetching data
+  const [loading, setLoading] = useState(true); // Loading state for fetching data
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true);  // Start loading
+        setLoading(true); // Start loading
         const [postRes, resRes, eventRes, mentorRes] = await Promise.all([
           api.get("/posts"),
           api.get("/resources"),
@@ -45,7 +45,7 @@ const CollegeDashboard = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setLoading(false);  // End loading
+        setLoading(false); // End loading
       }
     };
 
@@ -203,6 +203,7 @@ const CollegeDashboard = () => {
 };
 
 export default CollegeDashboard;
+
 
 
 
