@@ -1,3 +1,4 @@
+// src/pages/Signup.jsx
 import React, { useState } from 'react';
 import API from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -59,6 +60,7 @@ const Signup = () => {
       navigate('/profile');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during sign-up.');
+    } finally {
       setLoading(false);
     }
   };
@@ -68,12 +70,13 @@ const Signup = () => {
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         {['name', 'email', 'password', 'college'].map((field, idx) => (
           <input
             key={idx}
-            type={field === 'password' ? 'password' : 'text'}
+            type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
             name={field}
+            value={formData[field]}
             placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
@@ -105,6 +108,8 @@ const Signup = () => {
 };
 
 export default Signup;
+
+
 
 
 

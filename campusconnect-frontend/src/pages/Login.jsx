@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
@@ -34,6 +35,7 @@ const Login = () => {
       navigate("/profile");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials, please try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -43,7 +45,7 @@ const Login = () => {
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      <form onSubmit={handleLogin}>
+      <form onSubmit={handleLogin} autoComplete="off">
         <input
           type="email"
           placeholder="Email"
@@ -71,6 +73,7 @@ const Login = () => {
 };
 
 export default Login;
+
 
 
 
