@@ -116,7 +116,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Chat with OpenAI Endpoint
+// OpenAI Chat Endpoint
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message is required' });
@@ -155,7 +155,7 @@ app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   res.json({ fileUrl });
 });
 
-// Chat History
+// Chat History Endpoint
 app.get('/api/chat/history/:roomId', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -168,7 +168,7 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
   }
 });
 
-// Fallback Message Save (Optional)
+// Optional Save Chat API
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
@@ -237,6 +237,6 @@ app.use((err, req, res, next) => {
 
 // Start Server
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
