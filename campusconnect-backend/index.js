@@ -1,4 +1,3 @@
-// 📦 Required modules
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -12,17 +11,18 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// 📌 Setup
+// Initial Setup
+dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config();
+
 const prisma = new PrismaClient();
 const pool = new pkg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
-// 📁 File Upload Storage
+// File Upload Config
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 const storage = multer.diskStorage({
@@ -31,22 +31,20 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 🚀 App and Server
+// Express App
 const app = express();
 const server = http.createServer(app);
 
-// 🌍 CORS
+// CORS
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://zingy-licorice-136dfc.netlify.app', // ✅ your actual frontend on Netlify
+  'https://zingy-licorice-136dfc.netlify.app',
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
-
-// 🌐 Static Files
 app.use('/uploads', express.static(uploadDir));
 
-// 📡 Socket.IO
+// Socket.IO Setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -54,9 +52,9 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
 app.set('io', io);
 
+// Socket.IO Events
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
 
@@ -119,13 +117,13 @@ io.on('connection', (socket) => {
   });
 });
 
-// 🧠 OpenAI Endpoint
+// OpenAI Assistant Endpoint
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message is required' });
 
   try {
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -140,17 +138,38 @@ app.post('/api/chat', async (req, res) => {
       }),
     });
 
-    const data = await openaiResponse.json();
-    if (!openaiResponse.ok) return res.status(500).json({ error: 'OpenAI error', details: data });
+    const data = await response.json();
+    if (!response.ok) return res.status(500).json({ error: 'OpenAI Error', details: data });
 
     res.json({ reply: data.choices[0].message.content });
   } catch (error) {
-    console.error('Chatbot error:', error);
+    console.error('❌ Chatbot error:', error);
     res.status(500).json({ error: 'Internal error', details: error.message });
   }
 });
 
-// 💾 Save Message (fallback/manual)
+// Upload Chat Media
+app.post('/api/chat/upload', upload.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  res.json({ fileUrl });
+});
+
+// Chat History
+app.get('/api/chat/history/:roomId', async (req, res) => {
+  try {
+    const messages = await prisma.message.findMany({
+      where: { conversationId: req.params.roomId },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Fallback Message Save (optional)
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
@@ -178,35 +197,12 @@ app.post('/api/chat/save', async (req, res) => {
   }
 });
 
-// 📜 Fetch Chat History
-app.get('/api/chat/history/:roomId', async (req, res) => {
-  try {
-    const messages = await prisma.message.findMany({
-      where: { conversationId: req.params.roomId },
-      orderBy: { createdAt: 'asc' },
-    });
-    res.json(messages);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-});
-
-// 📁 Upload Chat Media
-app.post('/api/chat/upload', upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `${process.env.NODE_ENV === 'production' 
-    ? `https://${req.get('host')}` 
-    : `${req.protocol}://${req.get('host')}`
-  }/uploads/${req.file.filename}`;
-  res.json({ fileUrl });
-});
-
-// 🏥 Health Check
+// Health Check
 app.get('/', (req, res) => {
   res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
 });
 
-// 🧩 Routes
+// Import & Use Routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -231,14 +227,15 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
 
-// ❌ Error Handler
+// Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Uncaught Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// 🚀 Launch Server
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+

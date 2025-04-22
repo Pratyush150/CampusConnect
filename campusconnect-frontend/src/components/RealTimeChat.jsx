@@ -13,7 +13,7 @@ const RealTimeChat = ({ userId, receiverId }) => {
 
   const roomId = useRef([userId, receiverId].sort().join('-'));
 
-  // 🔃 Fetch messages
+  // 🔃 Fetch chat history
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -26,7 +26,7 @@ const RealTimeChat = ({ userId, receiverId }) => {
     fetchMessages();
   }, [userId, receiverId]);
 
-  // 🟢 Join room & socket listeners
+  // 🟢 Join room & set socket listeners
   useEffect(() => {
     const currentRoom = roomId.current;
     socket.emit('joinRoom', currentRoom);
@@ -56,12 +56,12 @@ const RealTimeChat = ({ userId, receiverId }) => {
     };
   }, [userId, receiverId]);
 
-  // ✍️ Emit typing event
+  // ✍️ Emit typing
   const handleTyping = () => {
     socket.emit('typing', { roomId: roomId.current, senderId: userId });
   };
 
-  // 📤 Send message
+  // 📤 Send text message
   const sendMessage = async () => {
     const trimmed = message.trim();
     if (!trimmed) return;
@@ -87,12 +87,12 @@ const RealTimeChat = ({ userId, receiverId }) => {
     }
   };
 
-  // 🔄 Auto scroll on new message
+  // 🔄 Scroll to bottom on new messages
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // 📎 File/image upload
+  // 📎 File upload handler
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -123,13 +123,17 @@ const RealTimeChat = ({ userId, receiverId }) => {
           const isSent = msg.senderId === userId;
           return (
             <div key={index} className={`mb-2 ${isSent ? 'text-right' : 'text-left'}`}>
-              <div className={`inline-block px-3 py-2 rounded-lg text-sm ${isSent
+              <div className={`inline-block px-3 py-2 rounded-lg text-sm ${
+                isSent
                   ? 'bg-blue-100 dark:bg-blue-600 text-blue-900 dark:text-white'
-                  : 'bg-green-100 dark:bg-green-600 text-green-900 dark:text-white'}`}>
+                  : 'bg-green-100 dark:bg-green-600 text-green-900 dark:text-white'
+              }`}>
                 {msg.content ? (
                   <div>{msg.content}</div>
                 ) : (
-                  <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">📎 View File</a>
+                  <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                    📎 View File
+                  </a>
                 )}
                 <div className="text-xs text-gray-500 dark:text-gray-300 mt-1">
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -143,7 +147,9 @@ const RealTimeChat = ({ userId, receiverId }) => {
       </div>
 
       {typingUser && (
-        <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">User {typingUser} is typing...</div>
+        <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+          User {typingUser} is typing...
+        </div>
       )}
 
       <div className="input-area flex items-center gap-2">
@@ -173,7 +179,9 @@ const RealTimeChat = ({ userId, receiverId }) => {
         <button
           onClick={sendMessage}
           disabled={!message.trim() || isSending}
-          className={`bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold ${
+            isSending ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           {isSending ? 'Sending...' : 'Send'}
         </button>
