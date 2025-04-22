@@ -38,7 +38,7 @@ const server = http.createServer(app);
 // 🌍 CORS
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://your-frontend.vercel.app', // ✅ Replace with actual frontend URL
+  'https://zingy-licorice-136dfc.netlify.app', // ✅ your actual frontend on Netlify
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
@@ -48,10 +48,14 @@ app.use('/uploads', express.static(uploadDir));
 
 // 📡 Socket.IO
 const io = new Server(server, {
-  cors: { origin: allowedOrigins, methods: ['GET', 'POST'], credentials: true },
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 });
 
-app.set('io', io); // Make Socket.IO accessible via req.app.get('io')
+app.set('io', io);
 
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
@@ -71,9 +75,7 @@ io.on('connection', (socket) => {
           fileUrl: message.fileUrl || null,
           type: message.type || 'TEXT',
         },
-        include: {
-          sender: true,
-        },
+        include: { sender: true },
       });
 
       await prisma.conversation.update({
@@ -137,8 +139,10 @@ app.post('/api/chat', async (req, res) => {
         ],
       }),
     });
+
     const data = await openaiResponse.json();
     if (!openaiResponse.ok) return res.status(500).json({ error: 'OpenAI error', details: data });
+
     res.json({ reply: data.choices[0].message.content });
   } catch (error) {
     console.error('Chatbot error:', error);
@@ -155,7 +159,9 @@ app.post('/api/chat/save', async (req, res) => {
       update: { updatedAt: new Date() },
       create: {
         id: roomId,
-        participants: { connect: [ { id: senderId }, { id: receiverId } ] },
+        participants: {
+          connect: [{ id: senderId }, { id: receiverId }],
+        },
       },
     });
     const message = await prisma.message.create({
@@ -188,7 +194,10 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
 // 📁 Upload Chat Media
 app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+  const fileUrl = `${process.env.NODE_ENV === 'production' 
+    ? `https://${req.get('host')}` 
+    : `${req.protocol}://${req.get('host')}`
+  }/uploads/${req.file.filename}`;
   res.json({ fileUrl });
 });
 

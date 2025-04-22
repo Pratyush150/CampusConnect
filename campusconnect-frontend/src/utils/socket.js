@@ -1,23 +1,29 @@
 // socket.js
 import { io } from 'socket.io-client';
 
-// 🌐 Use environment variable for switching dev/prod URLs
-const socket = io(import.meta.env.VITE_SOCKET_URL, {
-  transports: ['websocket'],     // Force WebSocket for reliability
-  withCredentials: true,         // Needed if backend uses cookies/auth
+const backendURL = import.meta.env.VITE_BACKEND_URL;
+
+if (!backendURL) {
+  console.warn('⚠️ VITE_BACKEND_URL is not defined in .env');
+}
+
+const socket = io(backendURL, {
+  transports: ['websocket'],
+  withCredentials: true,
+  autoConnect: true,
 });
 
-// ✅ Connected
+// ✅ Connection
 socket.on('connect', () => {
-  console.log('✅ Connected to socket server:', socket.id);
+  console.log('✅ Connected to socket server:', socket.id || 'no socket id');
 });
 
-// ❌ Disconnected
+// ❌ Disconnection
 socket.on('disconnect', () => {
   console.log('❌ Disconnected from socket server');
 });
 
-// ⚠️ Connection Errors
+// ⚠️ Error
 socket.on('connect_error', (err) => {
   console.error('⚠️ Socket connection error:', err.message);
 });
