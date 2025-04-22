@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
+import { validateEmail, validatePassword } from "../utils/validators.js";  // Corrected import path
 
-// Initialize Prisma client
 const prisma = new PrismaClient();
 
 // ---------------------------
@@ -10,6 +10,15 @@ const prisma = new PrismaClient();
 // ---------------------------
 export const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
+
+  // Validate email and password
+  if (!validateEmail(email)) {
+    return res.status(400).json({ message: 'Invalid email format' });
+  }
+
+  if (!validatePassword(password)) {
+    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+  }
 
   try {
     // Check if the user already exists
@@ -125,6 +134,5 @@ export const updateUserProfile = async (req, res) => {
       console.error(error);
       res.status(500).json({ message: 'Server error' });
     }
-  };
-  
+};
 

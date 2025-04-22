@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Dummy college data
 const colleges = [
@@ -8,14 +9,36 @@ const colleges = [
 ];
 
 const CollegeSelector = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+
+  const filteredColleges = colleges.filter(college =>
+    college.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    college.location.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleSelectCollege = (college) => {
+    const collegeSlug = college.name.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/college/${collegeSlug}`);
+  };
+
   return (
     <section className="py-12 px-6 bg-white dark:bg-gray-900">
       <h2 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
         Select Your College
       </h2>
 
+      {/* Search input */}
+      <input
+        type="text"
+        className="p-2 mb-4 w-full rounded-lg"
+        placeholder="Search for colleges"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
       <div className="grid md:grid-cols-3 sm:grid-cols-1 gap-6">
-        {colleges.map((college) => (
+        {filteredColleges.map((college) => (
           <div
             key={college.id}
             className="p-6 rounded-xl shadow-md border dark:border-gray-700 dark:bg-gray-800"
@@ -27,7 +50,7 @@ const CollegeSelector = () => {
               {college.location}
             </p>
             <button
-              onClick={() => handleSelectCollege(college)} // Add functionality to handle selection
+              onClick={() => handleSelectCollege(college)}
               className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300"
             >
               Enter
@@ -37,12 +60,6 @@ const CollegeSelector = () => {
       </div>
     </section>
   );
-};
-
-// Optional: A function to handle what happens when a college is selected
-const handleSelectCollege = (college) => {
-  // For now, it just logs the college name (can later be connected to routing or state management)
-  console.log("Selected College:", college.name);
 };
 
 export default CollegeSelector;

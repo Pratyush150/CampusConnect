@@ -1,64 +1,77 @@
-// Chatbot.jsx
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { ResizableBox } from "react-resizable";
+import Draggable from "react-draggable";
+import "react-resizable/css/styles.css"; // Import resizable styles
 
-// Simple AI Chatbot component
-const Chatbot = () => {
-  const [query, setQuery] = useState(""); // User input query
-  const [chatHistory, setChatHistory] = useState([]); // All previous chats
+const ChatBot = () => {
+  const [isChatVisible, setIsChatVisible] = useState(false);
 
-  // Updates input query as user types
-  const handleChange = (e) => {
-    setQuery(e.target.value);
-  };
-
-  // Handles "Ask" button click
-  const handleAsk = () => {
-    if (query.trim() === "") return; // Ignore empty queries
-
-    // Add user query and dummy bot response to chat history
-    setChatHistory([...chatHistory, { user: query, bot: "Let's solve it together!" }]);
-    setQuery(""); // Clear input field
-  };
+  // Toggle the chatbot visibility
+  const toggleChat = () => setIsChatVisible(!isChatVisible);
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md space-y-4">
-      {/* Chatbot Heading */}
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-white text-center">
-        AI Chatbot
-      </h2>
+    <>
+      {/* Button to open/close Chatbot */}
+      <div
+        onClick={toggleChat}
+        className="fixed bottom-16 right-6 bg-blue-500 text-white p-3 rounded-full shadow-lg cursor-pointer z-50"
+      >
+        <span role="img" aria-label="chat">
+          💬
+        </span>
+      </div>
 
-      {/* Display conversation history */}
-      <div className="space-y-2 max-h-64 overflow-y-auto border p-3 rounded bg-gray-50 dark:bg-gray-700">
-        {chatHistory.map((chat, index) => (
-          <div key={index} className="space-y-1">
-            <div className="text-right text-blue-600 dark:text-blue-300 font-medium">
-              You: {chat.user}
-            </div>
-            <div className="text-left text-green-700 dark:text-green-300 font-medium">
-              Bot: {chat.bot}
-            </div>
+      {/* Chatbot Window */}
+      {isChatVisible && (
+        <Draggable>
+          <div className="fixed bottom-24 right-6 z-50">
+            <ResizableBox
+              width={350}
+              height={400}
+              minConstraints={[250, 250]}
+              maxConstraints={[500, 600]}
+              axis="both"
+            >
+              <div className="bg-gray-900 dark:bg-gray-800 text-white p-4 rounded-xl shadow-xl flex flex-col w-full border-2 border-gray-600">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-xl font-semibold text-gray-300">
+                    Chatbot
+                  </h4>
+                  <button
+                    onClick={toggleChat}
+                    className="text-red-500 text-lg font-semibold"
+                  >
+                    X
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto p-2 mb-4">
+                  {/* Chat content */}
+                  <div className="mb-2">
+                    <p className="text-gray-300">Hi, how can I assist you?</p>
+                  </div>
+                  <div className="mb-2">
+                    <p className="text-gray-300">Ask me anything!</p>
+                  </div>
+                </div>
+                <div className="flex items-center mt-4">
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    className="w-full px-4 py-2 rounded-lg bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button className="ml-2 bg-blue-500 text-white p-2 rounded-lg">
+                    Send
+                  </button>
+                </div>
+              </div>
+            </ResizableBox>
           </div>
-        ))}
-      </div>
-
-      {/* Input field and Ask button */}
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={query}
-          onChange={handleChange}
-          placeholder="Ask me something..."
-          className="flex-1 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-900 dark:text-white"
-        />
-        <button
-          onClick={handleAsk}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded font-semibold"
-        >
-          Ask
-        </button>
-      </div>
-    </div>
+        </Draggable>
+      )}
+    </>
   );
 };
 
-export default Chatbot;
+export default ChatBot;
+
+

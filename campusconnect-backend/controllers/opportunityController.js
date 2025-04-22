@@ -1,10 +1,12 @@
-// controllers/opportunityController.js
-
 import { prisma } from "../prisma/prismaClient.js";
 
 // ✅ Post an opportunity
 export const postOpportunity = async (req, res) => {
   const { title, description, domain, type, link, userId } = req.body;
+
+  if (!title || !description || !domain || !type || !userId) {
+    return res.status(400).json({ message: "All fields except link are required." });
+  }
 
   try {
     const newOpportunity = await prisma.opportunity.create({
@@ -13,15 +15,15 @@ export const postOpportunity = async (req, res) => {
         description,
         domain,
         type,
-        link,
+        link: link || null,
         postedById: userId,
       },
     });
 
     res.status(201).json(newOpportunity);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to post opportunity" });
+    console.error("Post Opportunity Error:", err);
+    res.status(500).json({ message: "Failed to post opportunity." });
   }
 };
 
@@ -36,13 +38,22 @@ export const getOpportunities = async (req, res) => {
         ...(type && { type }),
       },
       orderBy: { createdAt: "desc" },
-      include: { postedBy: true },
+      include: {
+        postedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePic: true,
+          },
+        },
+      },
     });
 
     res.json(opportunities);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to fetch opportunities" });
+    console.error("Get Opportunities Error:", err);
+    res.status(500).json({ message: "Failed to fetch opportunities." });
   }
 };
 
@@ -51,7 +62,21 @@ export const applyOpportunity = async (req, res) => {
   const { userId, opportunityId } = req.body;
 
   try {
-    // Apply to the opportunity
+    // Check if already applied
+    const alreadyApplied = await prisma.opportunity.findFirst({
+      where: {
+        id: opportunityId,
+        applicants: {
+          some: { id: userId },
+        },
+      },
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({ message: "Already applied to this opportunity." });
+    }
+
+    // Add applicant
     await prisma.opportunity.update({
       where: { id: opportunityId },
       data: {
@@ -61,7 +86,7 @@ export const applyOpportunity = async (req, res) => {
       },
     });
 
-    // Get the opportunity details and poster info
+    // Get poster ID
     const opportunity = await prisma.opportunity.findUnique({
       where: { id: opportunityId },
       include: { postedBy: true },
@@ -69,31 +94,32 @@ export const applyOpportunity = async (req, res) => {
 
     const providerId = opportunity.postedById;
 
-    // Check if conversation already exists between user and provider
-    const existingConversation = await prisma.conversation.findFirst({
-      where: {
-        AND: [
-          { participants: { some: { id: userId } } },
-          { participants: { some: { id: providerId } } },
-        ],
-      },
-    });
-
-    // If no conversation exists, create one
-    if (!existingConversation) {
-      await prisma.conversation.create({
-        data: {
-          participants: {
-            connect: [{ id: userId }, { id: providerId }],
-          },
+    // Prevent user from messaging themselves
+    if (userId !== providerId) {
+      const existingConversation = await prisma.conversation.findFirst({
+        where: {
+          AND: [
+            { participants: { some: { id: userId } } },
+            { participants: { some: { id: providerId } } },
+          ],
         },
       });
+
+      if (!existingConversation) {
+        await prisma.conversation.create({
+          data: {
+            participants: {
+              connect: [{ id: userId }, { id: providerId }],
+            },
+          },
+        });
+      }
     }
 
-    res.json({ message: "Applied successfully and chat created (if not exists)" });
+    res.json({ message: "Applied successfully. Chat created if needed." });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to apply" });
+    console.error("Apply Error:", err);
+    res.status(500).json({ message: "Failed to apply." });
   }
 };
 
@@ -120,14 +146,14 @@ export const toggleSaveOpportunity = async (req, res) => {
       },
     });
 
-    res.json({ message: alreadySaved ? "Unsaved" : "Saved" });
+    res.json({ message: alreadySaved ? "Opportunity unsaved." : "Opportunity saved." });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to toggle save" });
+    console.error("Toggle Save Error:", err);
+    res.status(500).json({ message: "Failed to toggle save." });
   }
 };
 
-// ✅ Get Saved or Applied Opportunities for a user
+// ✅ Get Saved or Applied Opportunities
 export const getUserOpportunityData = async (req, res) => {
   const { userId } = req.params;
 
@@ -145,7 +171,7 @@ export const getUserOpportunityData = async (req, res) => {
       saved: user.savedOpportunities,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to get user opportunity data" });
+    console.error("Get User Opportunity Data Error:", err);
+    res.status(500).json({ message: "Failed to fetch user opportunity data." });
   }
 };

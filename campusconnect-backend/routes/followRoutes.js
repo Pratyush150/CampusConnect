@@ -16,3 +16,4 @@ router.get("/:userId/followers", protect, getFollowers);
 router.get("/:userId/following", protect, getFollowing);
 
 export default router;
+

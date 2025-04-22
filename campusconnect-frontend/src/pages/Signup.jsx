@@ -1,73 +1,127 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import API from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
-  const [email, setEmail] = useState(""); // To capture the email input
-  const [collegeID, setCollegeID] = useState(null); // 🟡 College ID file
-  const [preview, setPreview] = useState(""); // 🟢 For image preview
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    college: '',
+  });
+
+  const [collegeID, setCollegeID] = useState(null); // File input for College ID
+  const [preview, setPreview] = useState(""); // Image preview
+  const [error, setError] = useState(""); // Error message state
+  const [loading, setLoading] = useState(false); // Loading state
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleIDUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setCollegeID(file); // Store the file
-      setPreview(URL.createObjectURL(file)); // Create a URL for preview
+      setCollegeID(file);
+      setPreview(URL.createObjectURL(file)); // Live preview of the uploaded image
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const validateForm = () => {
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Please fill all required fields.');
+      return false;
+    }
+    return true;
+  };
 
-    // 🔐 You can now send `collegeID` file to backend via FormData
-    console.log("Email:", email);
-    console.log("College ID File:", collegeID);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(""); // Reset error state
+    setLoading(true); // Start loading
+
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+
+    const data = new FormData(); // Use FormData to include the file
+    data.append('name', formData.name);
+    data.append('email', formData.email);
+    data.append('password', formData.password);
+    data.append('college', formData.college);
+    if (collegeID) data.append('collegeID', collegeID);
+
+    try {
+      await API.post('/signup', data);
+      navigate('/profile'); // Redirect to profile on successful signup
+    } catch (err) {
+      setError('An error occurred during sign-up.');
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md w-full max-w-md space-y-4"
-      >
-        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sign Up</h2>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
+      <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-        {/* Email Input */}
+      <form onSubmit={handleSubmit}>
+        {/* Name, Email, Password Fields */}
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+        />
         <input
           type="email"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="w-full p-2 border border-gray-300 rounded"
+          name="email"
+          placeholder="Email"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="college"
+          placeholder="College Name"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
         />
 
         {/* College ID Upload */}
-        <label className="text-gray-700 dark:text-gray-200 text-sm">
-          Upload College ID (Optional)
-        </label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleIDUpload}
-          className="w-full text-sm"
-        />
-
-        {/* ID Preview */}
-        {preview && (
-          <div className="mt-2">
-            <p className="text-sm text-gray-600 dark:text-gray-300">College ID Preview:</p>
-            <img
-              src={preview}
-              alt="College ID Preview"
-              className="h-24 rounded border mt-2"
-            />
-          </div>
-        )}
+        <div className="mb-4">
+          <label htmlFor="collegeID" className="block text-gray-800 dark:text-white">Upload College ID</label>
+          <input
+            type="file"
+            id="collegeID"
+            accept="image/*"
+            className="w-full p-3 border rounded-lg text-gray-800"
+            onChange={handleIDUpload}
+          />
+          {preview && <img src={preview} alt="College ID Preview" className="mt-2 rounded-lg max-w-xs" />}
+        </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          disabled={loading}
+          className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
-          Create Account
+          {loading ? 'Signing Up...' : 'Sign Up'}
         </button>
       </form>
     </div>
@@ -75,4 +129,6 @@ const Signup = () => {
 };
 
 export default Signup;
+
+
 

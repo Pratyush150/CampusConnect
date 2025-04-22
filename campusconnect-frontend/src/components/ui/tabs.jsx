@@ -1,4 +1,6 @@
-import React from "react";
+// src/components/ui/tabs.jsx
+
+import React from 'react';
 
 export const Tabs = ({ children, value, onValueChange, className }) => (
   <div className={className}>{children}</div>

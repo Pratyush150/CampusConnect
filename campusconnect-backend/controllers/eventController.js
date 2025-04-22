@@ -11,15 +11,21 @@ export const createEvent = async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
+  // Ensure date is a valid future date
+  const eventDate = new Date(date);
+  if (eventDate < new Date()) {
+    return res.status(400).json({ message: "Event date must be in the future" });
+  }
+
   try {
     // Create new event
     const newEvent = await prisma.event.create({
       data: {
         title,
         description,
-        date: new Date(date),  // Ensure date is in Date format
+        date: eventDate,
         location,
-        userId: req.user.id,  // Using user ID from the protect middleware
+        userId: req.user.id, // Using user ID from the protect middleware
       },
     });
 
@@ -30,12 +36,13 @@ export const createEvent = async (req, res) => {
   }
 };
 
-// Get Events Controller (with filters)
+// Get Events Controller (with filters and pagination)
 export const getEvents = async (req, res) => {
-  const { filter } = req.query; // "upcoming" or "past"
+  const { filter, page = 1, limit = 10 } = req.query; // Pagination and filter
 
   try {
     let events;
+    const skip = (page - 1) * limit;
 
     // Get events based on filter
     if (filter === "upcoming") {
@@ -45,6 +52,8 @@ export const getEvents = async (req, res) => {
             gte: new Date(),  // Get upcoming events (date >= current date)
           },
         },
+        skip,
+        take: parseInt(limit), // Pagination
         orderBy: {
           date: "asc",  // Order by date ascending
         },
@@ -56,12 +65,16 @@ export const getEvents = async (req, res) => {
             lt: new Date(),  // Get past events (date < current date)
           },
         },
+        skip,
+        take: parseInt(limit),
         orderBy: {
           date: "desc",  // Order by date descending
         },
       });
     } else {
       events = await prisma.event.findMany({
+        skip,
+        take: parseInt(limit),
         orderBy: {
           date: "asc",  // Order by date ascending for all events
         },
@@ -145,4 +158,3 @@ export const deleteEvent = async (req, res) => {
     return res.status(500).json({ message: "Error deleting event" });
   }
 };
-

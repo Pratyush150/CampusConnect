@@ -49,3 +49,31 @@
   color: #888;
 }
 
+/* src/styles.css or any relevant CSS file */
+.feed {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.post-card {
+  background-color: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.post-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.post-card p {
+  font-size: 1rem;
+  margin-bottom: 5px;
+}
+
+.post-card small {
+  color: gray;
+}

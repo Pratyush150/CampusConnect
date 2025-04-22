@@ -1,43 +1,53 @@
-import React, { useState } from "react"; // Import React and useState hook
+import React, { useState } from "react";
 
-const EventForm = () => {
-  // Initial state for event form data
+const EventForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     datetime: "",
     location: "",
-    category: "Tech", // Default category
-    image: null, // For now we won’t preview/upload it
+    category: "Tech",
+    image: null,
   });
 
-  // Handles input change for all text-based fields (title, description, location, category)
+  const categories = ["Tech", "Cultural", "Sports", "Workshop"];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handles image upload (currently a mock)
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setFormData((prev) => ({ ...prev, image: file }));
   };
 
-  // Handles form submit and simulates a success message
   const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent page refresh on submit
-    alert("✅ Event created successfully (mock only)"); // Success alert
-    console.log("Event Data:", formData); // Log event data (in real-world, send this to the backend)
+    e.preventDefault();
+    alert("✅ Event created successfully (mock)");
+    console.log("Event Data:", formData);
+    if (onSubmit) {
+      onSubmit(formData);
+    }
+    setFormData({
+      title: "",
+      description: "",
+      datetime: "",
+      location: "",
+      category: "Tech",
+      image: null,
+    });
   };
 
   return (
     <form
-      onSubmit={handleSubmit} // Trigger handleSubmit on form submission
-      className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow space-y-4 w-full"
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md space-y-5 w-full max-w-2xl mx-auto"
     >
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">Post a New Event</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white text-center">
+        Post a New Event
+      </h2>
 
-      {/* Event Title Input */}
       <input
         type="text"
         name="title"
@@ -45,10 +55,9 @@ const EventForm = () => {
         onChange={handleChange}
         placeholder="Event Title"
         required
-        className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        className="w-full px-4 py-2 border rounded-md dark:bg-gray-900 dark:text-white dark:border-gray-700"
       />
 
-      {/* Event Description Textarea */}
       <textarea
         name="description"
         value={formData.description}
@@ -56,20 +65,18 @@ const EventForm = () => {
         placeholder="Event Description"
         required
         rows={4}
-        className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        className="w-full px-4 py-2 border rounded-md dark:bg-gray-900 dark:text-white dark:border-gray-700"
       />
 
-      {/* Date & Time Input */}
       <input
         type="datetime-local"
         name="datetime"
         value={formData.datetime}
         onChange={handleChange}
         required
-        className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        className="w-full px-4 py-2 border rounded-md dark:bg-gray-900 dark:text-white dark:border-gray-700"
       />
 
-      {/* Event Location Input */}
       <input
         type="text"
         name="location"
@@ -77,43 +84,59 @@ const EventForm = () => {
         onChange={handleChange}
         placeholder="Event Location"
         required
-        className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        className="w-full px-4 py-2 border rounded-md dark:bg-gray-900 dark:text-white dark:border-gray-700"
       />
 
-      {/* Category Dropdown */}
       <select
         name="category"
         value={formData.category}
         onChange={handleChange}
         required
-        className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        className="w-full px-4 py-2 border rounded-md dark:bg-gray-900 dark:text-white dark:border-gray-700"
       >
-        <option value="Tech">Tech</option>
-        <option value="Cultural">Cultural</option>
-        <option value="Sports">Sports</option>
-        <option value="Workshop">Workshop</option>
+        {categories.map((category) => (
+          <option key={category} value={category}>
+            {category}
+          </option>
+        ))}
       </select>
 
-      {/* Image Upload Input */}
       <input
         type="file"
         accept="image/*"
         onChange={handleImageChange}
-        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
-        file:rounded file:border-0 file:text-sm file:font-semibold
-        file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+        className="w-full text-sm text-gray-500
+          file:mr-4 file:py-2 file:px-4
+          file:rounded-lg file:border-0
+          file:text-sm file:font-semibold
+          file:bg-blue-50 file:text-blue-700
+          hover:file:bg-blue-100"
       />
 
-      {/* Submit Button */}
-      <button
-        type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        Post Event
-      </button>
+      {formData.image && (
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          Selected: {formData.image.name}
+        </p>
+      )}
+
+      {formData.image && (
+        <img
+          src={URL.createObjectURL(formData.image)}
+          alt="Event Preview"
+          className="w-32 h-32 object-cover mt-2"
+        />
+      )}
+
+      <div className="text-center">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
+        >
+          Post Event
+        </button>
+      </div>
     </form>
   );
 };
 
-export default EventForm; // Export the component
-
+export default EventForm;

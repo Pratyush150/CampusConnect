@@ -1,16 +1,19 @@
 // routes/chatRoutes.js
-
 import express from 'express';
-import * as chatController from '../controllers/chatController.js'; // ✅ Use named import
+import * as chatController from '../controllers/chatController.js';
+
 const router = express.Router();
 
-// ✅ Route to create a new conversation
+// Create new conversation
 router.post('/conversations', chatController.createConversation);
 
-// ✅ Route to send a new message
+// Get conversations for a user
+router.get('/conversations/:userId', chatController.getConversationsByUser);
+
+// Send new message
 router.post('/messages', chatController.sendMessage);
 
-// ✅ Route to get messages from a conversation
+// Get messages of a conversation
 router.get('/messages', chatController.getMessages);
 
 export default router;

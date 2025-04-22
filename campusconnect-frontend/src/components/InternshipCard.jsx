@@ -1,8 +1,29 @@
 import React from 'react';
 import { FaBookmark, FaRegBookmark } from 'react-icons/fa'; // Save icons
+import { formatDistanceToNow } from 'date-fns'; // ⏱️ For "X days ago" format
 
-// ✅ Card component to display one internship listing
 const InternshipCard = ({ internship, onSave, isSaved }) => {
+  const {
+    title,
+    description,
+    domain,
+    type,
+    location,
+    eligibility,
+    criteria,
+    applyLink,
+    verified,
+    datePosted,
+  } = internship;
+
+  // Format "posted x days ago" using date-fns
+  const postedAgo = datePosted
+    ? formatDistanceToNow(new Date(datePosted), { addSuffix: true })
+    : null;
+
+  // Check if remote
+  const isRemote = location?.toLowerCase().includes("remote");
+
   return (
     <div className="border rounded-lg shadow p-4 relative bg-white dark:bg-gray-800">
       {/* Top badges */}
@@ -10,53 +31,84 @@ const InternshipCard = ({ internship, onSave, isSaved }) => {
         <span className="text-xs bg-yellow-300 text-black px-2 py-1 rounded">
           Top Contributor ⭐
         </span>
-        {internship.verified && (
+        {verified && (
           <span className="text-xs bg-green-500 text-white px-2 py-1 rounded">
             Verified ✅
           </span>
         )}
       </div>
 
-      {/* Title & Description */}
-      <h3 className="text-lg font-bold mb-1">{internship.title}</h3>
+      {/* Title */}
+      <h3 className="text-lg font-bold mb-1">{title}</h3>
+
+      {/* Description fallback */}
       <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">
-        {internship.description}
+        {description || "No description provided."}
       </p>
 
-      {/* Domain + Type + Location */}
-      <p className="text-xs text-gray-500 mb-1">
-        {internship.domain} • {internship.type} • {internship.location}
-      </p>
+      {/* Domain & Type badges */}
+      <div className="flex flex-wrap gap-2 mb-2">
+        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+          {domain || "General"}
+        </span>
+        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+          {type || "Internship"}
+        </span>
+        <span
+          className={`text-xs px-2 py-1 rounded ${
+            isRemote
+              ? "bg-green-100 text-green-700"
+              : "bg-orange-100 text-orange-700"
+          }`}
+        >
+          {location || "Unknown Location"}
+        </span>
+        {postedAgo && (
+          <span className="text-xs text-gray-500 ml-auto">
+            Posted {postedAgo}
+          </span>
+        )}
+      </div>
 
-      {/* Eligibility & Criteria (new fields) */}
-      {internship.eligibility && (
+      {/* Eligibility & Criteria */}
+      {eligibility && (
         <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-          <strong>Eligibility:</strong> {internship.eligibility}
+          <strong>Eligibility:</strong> {eligibility}
         </p>
       )}
-      {internship.criteria && (
+      {criteria && (
         <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-          <strong>Criteria:</strong> {internship.criteria}
+          <strong>Criteria:</strong> {criteria}
         </p>
       )}
 
       {/* Save & Apply Buttons */}
       <div className="flex justify-between items-center mt-2">
-        <button onClick={() => onSave(internship)}>
+        {/* Tooltip on hover */}
+        <button
+          onClick={() => onSave(internship)}
+          title={isSaved ? "Remove from Saved" : "Save this opportunity"}
+        >
           {isSaved ? (
             <FaBookmark className="text-blue-500" />
           ) : (
             <FaRegBookmark className="text-gray-400" />
           )}
         </button>
-        <a
-          href={internship.applyLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-        >
-          Apply Now
-        </a>
+
+        {/* Apply Button with fallback */}
+        {applyLink ? (
+          <a
+            href={applyLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+          >
+            Apply Now
+          </a>
+        ) : (
+          <span className="text-sm text-gray-400 italic">No link available</span>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,3 @@
-// src/components/RewardsSection.jsx
 import React from 'react';
 
 // RewardsSection component for displaying top contributors
@@ -46,4 +45,5 @@ const RewardsSection = ({ topContributors }) => {
 };
 
 export default RewardsSection;
+
 

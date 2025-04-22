@@ -1,5 +1,4 @@
 // routes/opportunityRoutes.js
-
 import express from "express";
 import {
   postOpportunity,

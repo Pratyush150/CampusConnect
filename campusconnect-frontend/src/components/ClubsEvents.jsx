@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import EventCard from "./EventCard"; // Component to display each event card
 
 // List of categories for dropdown & filters
@@ -6,26 +6,10 @@ const categories = ["Tech", "Cultural", "Sports", "Workshop"];
 
 const ClubsEvents = () => {
   // ---------- State ----------
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: "Tech Talk on AI",
-      description: "Join us for an insightful talk on the future of AI.",
-      date: "2025-04-20",
-      category: "Tech",
-    },
-    {
-      id: 2,
-      title: "Cultural Night",
-      description: "Showcase your talents in music, dance, and more!",
-      date: "2025-04-10",
-      category: "Cultural",
-    },
-  ]);
-
-  const [filter, setFilter] = useState("All");         // Category filter
+  const [events, setEvents] = useState([]);
+  const [filter, setFilter] = useState("All"); // Category filter
   const [timeFilter, setTimeFilter] = useState("All"); // Upcoming | Past | All
-  const [sortOrder, setSortOrder] = useState("Newest");// Newest | Oldest
+  const [sortOrder, setSortOrder] = useState("Newest"); // Newest | Oldest
 
   const [formData, setFormData] = useState({
     title: "",
@@ -34,6 +18,24 @@ const ClubsEvents = () => {
     category: "",
   });
 
+  const [loading, setLoading] = useState(false); // To show loading indicator
+
+  // ---------- Fetch Events (API Call) ----------
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/events'); // Assuming '/events' fetches the events
+        setEvents(res.data);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+      setLoading(false);
+    };
+
+    fetchEvents();
+  }, []);
+
   // ---------- Handlers ----------
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -41,10 +43,12 @@ const ClubsEvents = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setLoading(true);
 
     // Basic form validation
     if (!formData.title || !formData.description || !formData.date || !formData.category) {
       alert("Please fill all fields.");
+      setLoading(false);
       return;
     }
 
@@ -55,6 +59,7 @@ const ClubsEvents = () => {
 
     setEvents((prev) => [newEvent, ...prev]);
     setFormData({ title: "", description: "", date: "", category: "" });
+    setLoading(false);
   };
 
   // ---------- Date Filters ----------
@@ -85,11 +90,7 @@ const ClubsEvents = () => {
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`px-4 py-2 rounded ${
-              filter === cat
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700 dark:text-white"
-            }`}
+            className={`px-4 py-2 rounded ${filter === cat ? "bg-blue-600 text-white" : "bg-gray-200 dark:bg-gray-700 dark:text-white"}`}
           >
             {cat}
           </button>
@@ -102,11 +103,7 @@ const ClubsEvents = () => {
           <button
             key={time}
             onClick={() => setTimeFilter(time)}
-            className={`px-3 py-1 rounded text-sm ${
-              timeFilter === time
-                ? "bg-green-600 text-white"
-                : "bg-gray-200 dark:bg-gray-700 dark:text-white"
-            }`}
+            className={`px-3 py-1 rounded text-sm ${timeFilter === time ? "bg-green-600 text-white" : "bg-gray-200 dark:bg-gray-700 dark:text-white"}`}
           >
             {time}
           </button>
@@ -126,14 +123,21 @@ const ClubsEvents = () => {
         </select>
       </div>
 
-      {/* ---------- Post Event Form ---------- */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-4"
+      {/* ---------- Reset Filters Button ---------- */}
+      <button
+        onClick={() => {
+          setFilter("All");
+          setTimeFilter("All");
+          setSortOrder("Newest");
+        }}
+        className="mt-4 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
       >
-        <h3 className="text-lg font-bold text-gray-800 dark:text-white">
-          Post a New Event
-        </h3>
+        Reset Filters
+      </button>
+
+      {/* ---------- Post Event Form ---------- */}
+      <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 shadow rounded-lg p-4 space-y-4">
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Post a New Event</h3>
 
         <input
           type="text"
@@ -182,7 +186,7 @@ const ClubsEvents = () => {
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Post Event
+          {loading ? "Posting..." : "Post Event"}
         </button>
       </form>
 
@@ -190,13 +194,7 @@ const ClubsEvents = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {processedEvents.length > 0 ? (
           processedEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              title={event.title}
-              description={event.description}
-              date={event.date}
-              category={event.category}
-            />
+            <EventCard key={event.id} title={event.title} description={event.description} date={event.date} category={event.category} />
           ))
         ) : (
           <p className="text-gray-500 dark:text-gray-300 col-span-2 text-center">
@@ -209,3 +207,4 @@ const ClubsEvents = () => {
 };
 
 export default ClubsEvents;
+

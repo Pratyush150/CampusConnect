@@ -1,6 +1,12 @@
+// routes/eventRoutes.js
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js";  // Ensure path is correct
-import { createEvent, getEvents, updateEvent, deleteEvent } from "../controllers/eventController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import {
+  createEvent,
+  getEvents,
+  updateEvent,
+  deleteEvent,
+} from "../controllers/eventController.js";
 
 const router = express.Router();
 
@@ -17,4 +23,5 @@ router.put("/events/:id", protect, updateEvent);
 router.delete("/events/:id", protect, deleteEvent);
 
 export default router;
+
 

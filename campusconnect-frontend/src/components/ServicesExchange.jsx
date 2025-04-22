@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 
 const ServicesExchange = () => {
-  // Form input state
   const [formData, setFormData] = useState({
     role: "offer",
     serviceType: "",
@@ -10,18 +9,14 @@ const ServicesExchange = () => {
     contact: "",
   });
 
-  // All service posts
   const [services, setServices] = useState([]);
-
-  // Filters & search
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest");
 
-  // Chat modal state
   const [selectedService, setSelectedService] = useState(null);
   const [messageText, setMessageText] = useState("");
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -30,10 +25,13 @@ const ServicesExchange = () => {
     }));
   };
 
-  // Submit new service
   const handleSubmit = (e) => {
     e.preventDefault();
-    setServices((prev) => [formData, ...prev]);
+    const newService = {
+      ...formData,
+      createdAt: new Date(),
+    };
+    setServices((prev) => [newService, ...prev]);
     setFormData({
       role: "offer",
       serviceType: "",
@@ -43,16 +41,20 @@ const ServicesExchange = () => {
     });
   };
 
-  // Filter + Search services
-  const filteredServices = services.filter((service) => {
-    const matchesRole = filter === "all" || service.role === filter;
-    const matchesSearch =
-      service.serviceType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesRole && matchesSearch;
-  });
+  const filteredServices = services
+    .filter((service) => {
+      const matchesRole = filter === "all" || service.role === filter;
+      const matchesSearch =
+        service.serviceType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesRole && matchesSearch;
+    })
+    .sort((a, b) =>
+      sortOrder === "newest"
+        ? new Date(b.createdAt) - new Date(a.createdAt)
+        : new Date(a.createdAt) - new Date(b.createdAt)
+    );
 
-  // Open & close modal
   const openChatModal = (service) => {
     setSelectedService(service);
     setMessageText("");
@@ -64,7 +66,6 @@ const ServicesExchange = () => {
   };
 
   const handleSendMessage = () => {
-    // Here you can replace the alert with an API call to send the message.
     alert(`Message sent to ${selectedService.contact}:\n\n${messageText}`);
     closeModal();
   };
@@ -75,10 +76,10 @@ const ServicesExchange = () => {
         Offer / Request Academic Help
       </h2>
 
-      {/* FORM */}
+      {/* 🔹 Form Section */}
       <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             I want to:
           </label>
           <select
@@ -93,7 +94,7 @@ const ServicesExchange = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Service Type
           </label>
           <input
@@ -108,7 +109,7 @@ const ServicesExchange = () => {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Description
           </label>
           <textarea
@@ -123,7 +124,7 @@ const ServicesExchange = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Expected Price (Optional)
           </label>
           <input
@@ -137,7 +138,7 @@ const ServicesExchange = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Contact (email or phone)
           </label>
           <input
@@ -160,7 +161,7 @@ const ServicesExchange = () => {
         </div>
       </form>
 
-      {/* FILTER & SEARCH */}
+      {/* 🔹 Filter, Search, Sort */}
       {services.length > 0 && (
         <div className="mt-6 space-y-3">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -181,60 +182,64 @@ const ServicesExchange = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="p-2 w-full sm:w-64 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
             />
+
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="p-2 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
           </div>
 
-          {/* SERVICE LIST */}
-          {filteredServices.length > 0 ? (
-            filteredServices.map((service, index) => (
-              <div
-                key={index}
-                className="border dark:border-gray-700 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 mb-3"
-              >
-                <p className="font-semibold text-gray-700 dark:text-white">
-                  {service.role === "offer"
-                    ? "🧑‍🏫 Offering"
-                    : "🆘 Requesting"}:{" "}
-                  {service.serviceType}
-                </p>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {service.description}
-                </p>
-                {service.price && (
-                  <p className="text-sm text-green-600 dark:text-green-400">
-                    💰 Price: {service.price}
-                  </p>
-                )}
-                {service.contact && (
-                  <>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                      📞 Contact: {service.contact}
-                    </p>
-                    <button
-                      onClick={() => openChatModal(service)}
-                      className="mt-2 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      Message
-                    </button>
-                  </>
-                )}
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-600 dark:text-gray-300 mt-3">
-              No services found matching your search or filter.
-            </p>
-          )}
+          {/* 🔹 Table View */}
+          <div className="overflow-x-auto mt-4">
+            <table className="w-full border-collapse border text-sm">
+              <thead className="bg-gray-200 dark:bg-gray-700">
+                <tr>
+                  <th className="p-2 border">Type</th>
+                  <th className="p-2 border">Service</th>
+                  <th className="p-2 border">Description</th>
+                  <th className="p-2 border">Price</th>
+                  <th className="p-2 border">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredServices.map((service, index) => (
+                  <tr key={index} className="bg-white dark:bg-gray-800">
+                    <td className="p-2 border text-center capitalize">
+                      {service.role}
+                    </td>
+                    <td className="p-2 border">{service.serviceType}</td>
+                    <td className="p-2 border">{service.description}</td>
+                    <td className="p-2 border text-center">
+                      {service.price || "-"}
+                    </td>
+                    <td className="p-2 border text-center">
+                      <button
+                        onClick={() => openChatModal(service)}
+                        className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      >
+                        Message
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Empty state if no services at all */}
+      {/* 🔹 Empty State */}
       {services.length === 0 && (
         <p className="text-gray-500 dark:text-gray-400 mt-6 text-center">
           No services posted yet. Be the first to post!
         </p>
       )}
 
-      {/* CHAT MODAL */}
+      {/* 🔹 Chat Modal */}
       {selectedService && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-lg w-11/12 sm:w-96">
@@ -270,3 +275,5 @@ const ServicesExchange = () => {
 };
 
 export default ServicesExchange;
+
+

@@ -1,7 +1,6 @@
 // src/components/MentorMap/MentorMap.jsx
-import React, { useState } from "react";
-import MentorCard from "./MentorCard";
-import mentors from "./MentorData";
+import React, { useState, useEffect } from "react";
+import MentorCard from "./MentorCard";  // Component to display individual mentor card
 
 /**
  * Main MentorMap UI component with category and subcategory filtering.
@@ -50,6 +49,21 @@ const MentorMap = () => {
   // State to manage selected main category and subcategory
   const [selectedMain, setSelectedMain] = useState("Tech");
   const [selectedSub, setSelectedSub] = useState("");
+  const [mentors, setMentors] = useState([]); // State to store mentors data
+
+  // Fetch mentors data from the API when the component mounts
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        const res = await api.get("/mentors"); // Assuming '/mentors' endpoint fetches mentor data
+        setMentors(res.data); // Store the fetched data in the mentors state
+      } catch (error) {
+        console.error("Error fetching mentors:", error); // Log error in case of failure
+      }
+    };
+
+    fetchMentors(); // Call the fetchMentors function
+  }, []); // Empty dependency array ensures this effect runs only once on mount
 
   // Filter mentors based on selected subcategory and category
   const filteredMentors = mentors.filter((mentor) =>
@@ -64,7 +78,7 @@ const MentorMap = () => {
           <button
             key={cat}
             onClick={() => {
-              setSelectedMain(cat);
+              setSelectedMain(cat); // Update selected main category
               setSelectedSub(""); // Reset subcategory when changing main category
             }}
             className={`px-4 py-2 rounded ${
@@ -82,7 +96,7 @@ const MentorMap = () => {
       <div>
         <select
           value={selectedSub}
-          onChange={(e) => setSelectedSub(e.target.value)}
+          onChange={(e) => setSelectedSub(e.target.value)} // Update selected subcategory
           className="px-3 py-2 border rounded dark:bg-gray-900 dark:text-white"
         >
           <option value="">-- Select Subcategory --</option>
@@ -98,7 +112,7 @@ const MentorMap = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {filteredMentors.length > 0 ? (
           filteredMentors.map((mentor, index) => (
-            <MentorCard key={index} {...mentor} />
+            <MentorCard key={index} {...mentor} /> // Display each filtered mentor as a card
           ))
         ) : (
           <p className="col-span-2 text-center text-gray-500 dark:text-gray-300">
@@ -111,5 +125,6 @@ const MentorMap = () => {
 };
 
 export default MentorMap;
+
 
 

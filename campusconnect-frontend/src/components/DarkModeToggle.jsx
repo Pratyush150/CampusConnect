@@ -5,29 +5,46 @@ const DarkModeToggle = () => {
   // State to track whether dark mode is enabled or not
   const [darkMode, setDarkMode] = useState(false);
 
-  // useEffect to add or remove 'dark' class on the <html> tag
+  // Load theme from localStorage on initial load
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add("dark"); // Enable dark mode
+    const savedTheme = localStorage.getItem("darkMode");
+    if (savedTheme === "true") {
+      setDarkMode(true);
     } else {
-      document.documentElement.classList.remove("dark"); // Revert to light mode
+      setDarkMode(false);
     }
-  }, [darkMode]); // Dependency array ensures the effect runs only when darkMode changes
+  }, []);
+
+  // Update theme in localStorage and toggle the dark/light mode on <html> tag
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode); // Save theme preference to localStorage
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
 
   // Toggle between dark and light mode
   const toggleMode = () => {
-    setDarkMode((prevMode) => !prevMode); // Toggle the state
+    setDarkMode((prevMode) => !prevMode);
   };
 
   return (
     <button
       onClick={toggleMode} // When clicked, toggle between dark and light mode
+      aria-label="Toggle Dark/Light Mode"
       className="p-2 rounded-full border border-gray-400 dark:border-white transition duration-300"
     >
       {/* Display Sun icon for dark mode and Moon icon for light mode */}
-      {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+      {darkMode ? (
+        <Sun size={20} className="transition-transform transform rotate-180" />
+      ) : (
+        <Moon size={20} className="transition-transform transform rotate-0" />
+      )}
     </button>
   );
 };
 
 export default DarkModeToggle;
+

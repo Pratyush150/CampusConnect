@@ -1,39 +1,14 @@
-const express = require("express");
-const router = express.Router();
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+// routes/campusWallRoutes.js
+import express from "express";
+import { getAllPosts, createPost } from "../controllers/campusWallController.js"; // Import controller functions
 
-// GET all posts
-router.get("/", async (req, res) => {
-  try {
-    const posts = await prisma.campusWall.findMany({
-      orderBy: { created_at: "desc" },
-    });
-    res.json(posts);
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    res.status(500).json({ error: "Error fetching campus wall posts" });
-  }
-});
+const router = express.Router();
+
+// GET all posts (latest first)
+router.get("/", getAllPosts); // Delegate to the controller's getAllPosts function
 
 // POST a new post
-router.post("/", async (req, res) => {
-  const { user, college, content } = req.body;
-  try {
-    const newPost = await prisma.campusWall.create({
-      data: {
-        user_name: user,
-        college,
-        content,
-      },
-    });
-    res.status(201).json(newPost);
-  } catch (error) {
-    console.error("Error adding new post:", error);
-    res.status(500).json({ error: "Error creating post" });
-  }
-});
+router.post("/", createPost); // Delegate to the controller's createPost function
 
-module.exports = router;
-
+export default router;
 

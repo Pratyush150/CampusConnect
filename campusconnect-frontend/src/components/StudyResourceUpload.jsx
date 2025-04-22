@@ -2,107 +2,99 @@
 import React, { useState } from "react";
 
 const StudyResourceUpload = ({ handleAddResource }) => {
+  // Initialize form data state
   const [formData, setFormData] = useState({
-    resourceType: "",
     subject: "",
     description: "",
     file: null,
+    resourceType: "Notes", // Default value
   });
 
-  // Handle form data change (for text fields)
+  // Handle input changes (including file upload)
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, files } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: files ? files[0] : value, // Set file if present, else set text
     }));
   };
 
-  // Handle file selection
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      file: e.target.files[0],
-    }));
-  };
-
-  // Submit form and call parent handler to add resource
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validation check to ensure all fields are filled
-    if (formData.file && formData.subject && formData.description && formData.resourceType) {
-      handleAddResource(formData);  // Pass the form data to parent component
-      // Reset the form data after submitting
-      setFormData({
-        resourceType: "",
-        subject: "",
-        description: "",
-        file: null,
-      });
-    } else {
+    // Basic validation to ensure all fields are filled
+    if (
+      formData.subject.trim() === "" ||
+      formData.description.trim() === "" ||
+      !formData.file ||
+      !formData.resourceType
+    ) {
       alert("Please fill all fields and upload a file.");
+      return;
     }
+
+    // Pass the data to parent handler
+    handleAddResource(formData);
+
+    // Reset form
+    setFormData({
+      subject: "",
+      description: "",
+      file: null,
+      resourceType: "Notes",
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Resource Type input */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Resource Type
-        </label>
-        <input
-          type="text"
-          name="resourceType"
-          value={formData.resourceType}
-          onChange={handleChange}
-          placeholder="e.g., Notes, PDF"
-          className="mt-1 w-full p-2 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-        />
-      </div>
-
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-gray-900 rounded-xl shadow p-4 mb-6 space-y-4"
+    >
       {/* Subject input */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Subject
-        </label>
-        <input
-          type="text"
-          name="subject"
-          value={formData.subject}
-          onChange={handleChange}
-          placeholder="e.g., Data Structures, DBMS"
-          className="mt-1 w-full p-2 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-        />
-      </div>
+      <input
+        type="text"
+        name="subject"
+        placeholder="Subject Name"
+        value={formData.subject}
+        onChange={handleChange}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+      />
 
       {/* Description input */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Description
-        </label>
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          rows={3}
-          placeholder="Describe the resource"
-          className="mt-1 w-full p-2 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-        />
-      </div>
+      <textarea
+        name="description"
+        placeholder="Brief Description"
+        value={formData.description}
+        onChange={handleChange}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+      />
 
-      {/* File upload input */}
-      <div>
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Upload File
-        </label>
-        <input
-          type="file"
-          onChange={handleFileChange}
-          className="mt-1 w-full p-2 rounded-md border dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-        />
-      </div>
+      {/* File input */}
+      <input
+        type="file"
+        name="file"
+        onChange={handleChange}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+      />
+
+      {/* Resource type dropdown */}
+      <select
+        name="resourceType"
+        value={formData.resourceType}
+        onChange={handleChange}
+        required
+        className="w-full p-2 border rounded dark:bg-gray-800 dark:text-white"
+      >
+        <option>Notes</option>
+        <option>Previous Year Paper</option>
+        <option>Slides</option>
+        <option>Books</option>
+        <option>Others</option>
+      </select>
 
       {/* Submit button */}
       <button
@@ -116,3 +108,4 @@ const StudyResourceUpload = ({ handleAddResource }) => {
 };
 
 export default StudyResourceUpload;
+

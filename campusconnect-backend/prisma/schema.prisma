@@ -4,31 +4,31 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("DATABASE_URL") // Railway prod or fallback to local
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  college   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  posts                Post[] // ✅ Posts created by the user
-  resources            Resource[] // ✅ Resources uploaded by the user
-  events               Event[] // ✅ Events created by the user
-  mentors              Mentor[] // ✅ If user is a mentor
-  followed             Follow[]      @relation("Follower") // ✅ Users this user follows
-  following            Follow[]      @relation("Following") // ✅ Users following this user
-  appliedOpportunities Opportunity[] @relation("AppliedOpportunities") // ✅ Opportunities applied to
-  savedOpportunities   Opportunity[] @relation("SavedOpportunities") // ✅ Opportunities saved by the user
-  postedOpportunities  Opportunity[] @relation("PostedOpportunities") // ✅ Opportunities posted by the user
-
-  // ✅ Missing back-relations added here:
-  conversations Conversation[] @relation("ConversationParticipants")
-  messagesSent  Message[]      @relation("UserMessagesSent")
+  id                    String            @id @default(cuid())
+  name                  String
+  email                 String            @unique
+  password              String
+  college               String?
+  collegeIDPath         String? 
+  collegeIdImage        String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  posts                 Post[]            // Posts created by the user
+  resources             Resource[]        // Resources uploaded by the user
+  events                Event[]           // Events created by the user
+  mentors               Mentor[]          // If user is a mentor
+  followed              Follow[]          @relation("Follower") // Users this user follows
+  following             Follow[]          @relation("Following") // Users following this user
+  appliedOpportunities  Opportunity[]     @relation("AppliedOpportunities") // Opportunities applied to
+  savedOpportunities    Opportunity[]     @relation("SavedOpportunities") // Opportunities saved by the user
+  postedOpportunities   Opportunity[]     @relation("PostedOpportunities") // Opportunities posted by the user
+  conversations         Conversation[]    @relation("ConversationParticipants") // Conversations the user is part of
+  messagesSent          Message[]         @relation("UserMessagesSent") // Messages sent by the user
+  campusWalls           CampusWall[]      // Added relation to CampusWall
 }
 
 model Post {
@@ -38,6 +38,7 @@ model Post {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Resource {
@@ -85,20 +86,20 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  @@unique([followerId, followingId])
+  @@unique([followerId, followingId]) // Ensures uniqueness between follower and following pair
 }
 
 model Opportunity {
   id          String   @id @default(cuid())
   title       String
   description String
-  domain      String // e.g., Web Dev, Data Science
-  type        String // Internship or Freelance
-  link        String // External application link
-  postedBy    User     @relation("PostedOpportunities", fields: [postedById], references: [id])
+  domain      String  // e.g., Web Dev, Data Science
+  type        String  // Internship or Freelance
+  link        String  // External application link
+  postedBy    User    @relation("PostedOpportunities", fields: [postedById], references: [id])
   postedById  String
-  applicants  User[]   @relation("AppliedOpportunities")
-  savedBy     User[]   @relation("SavedOpportunities")
+  applicants  User[]  @relation("AppliedOpportunities")
+  savedBy     User[]  @relation("SavedOpportunities")
   createdAt   DateTime @default(now())
 }
 
@@ -112,18 +113,28 @@ model Conversation {
 
 model Message {
   id             String       @id @default(cuid())
-  content        String // Content of the message
-  senderId       String // ID of the user who sent the message
+  content        String       // Content of the message
+  senderId       String       // ID of the user who sent the message
   sender         User         @relation("UserMessagesSent", fields: [senderId], references: [id])
-  conversationId String // ID of the conversation this message belongs to
+  conversationId String       // ID of the conversation this message belongs to
   conversation   Conversation @relation(fields: [conversationId], references: [id])
   createdAt      DateTime     @default(now()) // When the message was sent
 }
 
 model CampusWall {
   id         Int      @id @default(autoincrement())
-  user_name  String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id]) // Related user
   college    String
   content    String
-  created_at DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
+
+model College {
+  id          Int      @id @default(autoincrement())
+  name        String
+  location    Json     // Store as GeoJSON format (or use a custom PostGIS type for better performance)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

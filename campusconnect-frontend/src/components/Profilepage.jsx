@@ -43,11 +43,21 @@ const ProfilePage = () => {
       {/* Followers and Following */}
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6 mb-8 flex justify-between">
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-800 dark:text-white">{userProfile.followers}</p>
+          <button
+            onClick={() => alert("View Followers")}
+            className="text-lg font-semibold text-gray-800 dark:text-white"
+          >
+            {userProfile.followers}
+          </button>
           <p className="text-sm text-gray-600 dark:text-gray-400">Followers</p>
         </div>
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-800 dark:text-white">{userProfile.following}</p>
+          <button
+            onClick={() => alert("View Following")}
+            className="text-lg font-semibold text-gray-800 dark:text-white"
+          >
+            {userProfile.following}
+          </button>
           <p className="text-sm text-gray-600 dark:text-gray-400">Following</p>
         </div>
       </div>
@@ -56,11 +66,15 @@ const ProfilePage = () => {
       <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">Recent Posts</h3>
         <div className="space-y-4">
-          {userProfile.posts.map((post) => (
-            <div key={post.id} className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md">
-              <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
-            </div>
-          ))}
+          {userProfile.posts.length === 0 ? (
+            <p>No posts yet!</p>
+          ) : (
+            userProfile.posts.map((post) => (
+              <div key={post.id} className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md">
+                <p className="text-gray-800 dark:text-gray-200">{post.content}</p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -68,3 +82,5 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+
+

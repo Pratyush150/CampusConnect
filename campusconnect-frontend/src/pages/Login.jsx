@@ -1,64 +1,86 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../services/api"; // Axios instance
 
 const Login = () => {
-  // State for form fields
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  // Handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Basic form validation
+  // 🔐 Form fields and state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // ✅ Simple validation
+  const validateForm = () => {
     if (!email || !password) {
-      setError('Both fields are required.');
+      setError("Please fill in both email and password.");
+      return false;
+    }
+    return true;
+  };
+
+  // 🔄 Handle login submit
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    if (!validateForm()) {
+      setLoading(false);
       return;
     }
-    // Clear error on successful form submission
-    setError('');
-    console.log('Form submitted:', { email, password });
-    // Handle login logic here (API call, etc.)
+
+    try {
+      const response = await API.post("/auth/login", { email, password }); // 🔧 Fixed endpoint
+
+      // 🪪 Save JWT token to localStorage
+      localStorage.setItem("token", response.data.token);
+
+      // 🚀 Redirect after login
+      navigate("/profile");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid credentials, please try again.");
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-md w-full max-w-sm">
-        <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white">Login</h2>
-        {error && <p className="text-sm text-red-500 text-center mt-2">{error}</p>}
-        <form onSubmit={handleSubmit} className="mt-6">
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm text-gray-600 dark:text-gray-300">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-400"
-              placeholder="Enter your email"
-            />
-          </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm text-gray-600 dark:text-gray-300">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white dark:focus:ring-blue-400"
-              placeholder="Enter your password"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full py-2 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          >
-            Login
-          </button>
-        </form>
-      </div>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
+      <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+      <form onSubmit={handleLogin}>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          {loading ? "Logging in..." : "Log In"}
+        </button>
+      </form>
     </div>
   );
 };
 
 export default Login;
+
+
+
+
+
 

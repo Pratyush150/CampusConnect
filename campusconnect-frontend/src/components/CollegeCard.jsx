@@ -1,16 +1,26 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const CollegeCard = ({ college }) => {
-  const navigate = useNavigate(); // Use navigate hook for routing
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   // Function to handle button click and navigate to the college dashboard
   const handleEnterClick = () => {
-    // Convert the college name to a URL-friendly slug (lowercase and hyphens)
-    const collegeSlug = college.name.toLowerCase().replace(/\s+/g, "-");
+    if (!college || !college.name) return;
 
+    // Convert the college name to a URL-friendly slug (lowercase and hyphens)
+    const collegeSlug = college.name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-"); // Replace spaces with hyphens
+
+    setLoading(true); // Show loading state during navigation
     // Navigate to that specific college dashboard page
-    navigate(`/college/${collegeSlug}`);
+    setTimeout(() => { // Simulating async loading state
+      navigate(`/college/${collegeSlug}`);
+      setLoading(false); // Reset loading state after navigation
+    }, 500); // Simulate a delay
   };
 
   // Optional: Adding a fallback in case college object is missing or has no name
@@ -29,12 +39,13 @@ const CollegeCard = ({ college }) => {
       <button
         onClick={handleEnterClick}
         className="mt-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300"
+        aria-label={`Enter ${college.name} Dashboard`}
+        disabled={loading} // Disable the button while loading
       >
-        Enter
+        {loading ? "Loading..." : "Enter"}
       </button>
     </div>
   );
 };
 
 export default CollegeCard;
-
