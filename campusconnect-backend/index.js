@@ -22,9 +22,10 @@ const pool = new pkg.Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// File Upload Config
+// File Upload Setup
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
@@ -94,9 +95,7 @@ io.on('connection', (socket) => {
           conversationId,
           NOT: { senderId: userId },
         },
-        data: {
-          isSeen: true,
-        },
+        data: { isSeen: true },
       });
       io.to(conversationId).emit('messagesSeen', { conversationId, seenBy: userId });
     } catch (err) {
@@ -117,7 +116,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// OpenAI Assistant Endpoint
+// Chat with OpenAI Endpoint
 app.post('/api/chat', async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message is required' });
@@ -148,7 +147,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Upload Chat Media
+// File Upload Endpoint
 app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
@@ -169,10 +168,11 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
   }
 });
 
-// Fallback Message Save (optional)
+// Fallback Message Save (Optional)
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
+
     const conversation = await prisma.conversation.upsert({
       where: { id: roomId },
       update: { updatedAt: new Date() },
@@ -183,6 +183,7 @@ app.post('/api/chat/save', async (req, res) => {
         },
       },
     });
+
     const message = await prisma.message.create({
       data: {
         content: text,
@@ -190,6 +191,7 @@ app.post('/api/chat/save', async (req, res) => {
         conversationId: conversation.id,
       },
     });
+
     res.json({ success: true, message });
   } catch (err) {
     console.error(err);
@@ -202,7 +204,7 @@ app.get('/', (req, res) => {
   res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
 });
 
-// Import & Use Routes
+// Routes
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -227,7 +229,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
 
-// Error Handler
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Uncaught Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
@@ -238,4 +240,3 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
-
