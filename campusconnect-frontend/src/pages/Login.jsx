@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../services/api"; // Axios instance
+import API from "../services/api";
 
 const Login = () => {
   const navigate = useNavigate();
 
-  // 🔐 Form fields and state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Simple validation
   const validateForm = () => {
     if (!email || !password) {
       setError("Please fill in both email and password.");
@@ -20,7 +18,6 @@ const Login = () => {
     return true;
   };
 
-  // 🔄 Handle login submit
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -32,12 +29,8 @@ const Login = () => {
     }
 
     try {
-      const response = await API.post("/auth/login", { email, password }); // 🔧 Fixed endpoint
-
-      // 🪪 Save JWT token to localStorage
-      localStorage.setItem("token", response.data.token);
-
-      // 🚀 Redirect after login
+      const res = await API.post("/auth/login", { email, password });
+      localStorage.setItem("token", res.data.token);
       navigate("/profile");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials, please try again.");
@@ -78,7 +71,6 @@ const Login = () => {
 };
 
 export default Login;
-
 
 
 

@@ -36,15 +36,13 @@ const AppWithAuthCheck = () => {
   );
 };
 
-function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppWithAuthCheck />
-      </Router>
-    </AuthProvider>
-  );
-}
+const App = () => (
+  <AuthProvider>
+    <Router>
+      <AppWithAuthCheck />
+    </Router>
+  </AuthProvider>
+);
 
 export default App;
 
