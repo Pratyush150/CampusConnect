@@ -17,18 +17,18 @@ model User {
   collegeIdImage        String?
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
-  posts                 Post[]
-  resources             Resource[]
-  events                Event[]
-  mentors               Mentor[]
-  followed              Follow[]          @relation("Follower")
-  following             Follow[]          @relation("Following")
-  appliedOpportunities  Opportunity[]     @relation("AppliedOpportunities")
-  savedOpportunities    Opportunity[]     @relation("SavedOpportunities")
-  postedOpportunities   Opportunity[]     @relation("PostedOpportunities")
-  conversations         Conversation[]    @relation("ConversationParticipants")
-  messagesSent          Message[]         @relation("UserMessagesSent")
-  campusWalls           CampusWall[]
+  posts                 Post[]            // User posts
+  resources             Resource[]        // Resources uploaded by user
+  events                Event[]           // Events created by user
+  mentors               Mentor[]          // Mentors for user
+  followed              Follow[]          @relation("Follower") // Followed users
+  following             Follow[]          @relation("Following") // Users being followed
+  appliedOpportunities  Opportunity[]     @relation("AppliedOpportunities") // Opportunities user applied for
+  savedOpportunities    Opportunity[]     @relation("SavedOpportunities") // Opportunities saved by user
+  postedOpportunities   Opportunity[]     @relation("PostedOpportunities") // Opportunities posted by user
+  conversations         Conversation[]    @relation("ConversationParticipants") // Conversations user is part of
+  messagesSent          Message[]         @relation("UserMessagesSent") // Messages sent by the user
+  campusWalls           CampusWall[]      // Campus wall posts by user
 }
 
 model Post {
@@ -86,7 +86,7 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  @@unique([followerId, followingId])
+  @@unique([followerId, followingId]) // Ensure no duplicate follows
 }
 
 model Opportunity {
@@ -106,7 +106,7 @@ model Opportunity {
 model Conversation {
   id           String       @id @default(cuid())
   participants User[]       @relation("ConversationParticipants")
-  messages     Message[]
+  messages     Message[]    // Messages related to the conversation
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
@@ -114,7 +114,7 @@ model Conversation {
 model Message {
   id             String       @id @default(cuid())
   content        String?
-  fileUrl        String?      // For image/file messages
+  fileUrl        String?      // File or image message
   type           MessageType  @default(TEXT)
   isSeen         Boolean      @default(false)
   senderId       String
@@ -142,8 +142,7 @@ model CampusWall {
 model College {
   id        Int      @id @default(autoincrement())
   name      String
-  location  Json
+  location  Json     // Store location as JSON (could be latitude/longitude, address, etc.)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-

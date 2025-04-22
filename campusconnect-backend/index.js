@@ -10,6 +10,17 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import authRoutes from './routes/auth.js';  // Correctly import auth routes
+import userRoutes from './routes/userRoutes.js';
+import postRoutes from './routes/postRoutes.js';
+import resourceRoutes from './routes/resourceRoutes.js';
+import mentorRoutes from './routes/mentorRoutes.js';
+import leaderboardRoutes from './routes/leaderboardRoutes.js';
+import followRoutes from './routes/followRoutes.js';
+import opportunityRoutes from './routes/opportunityRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import campusWallRoutes from './routes/campusWallRoutes.js';
+import collegeRoutes from './routes/collegeRoutes.js';
 
 // Initial Setup
 dotenv.config();
@@ -36,7 +47,7 @@ const upload = multer({ storage });
 const app = express();
 const server = http.createServer(app);
 
-// CORS
+// CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'https://zingy-licorice-136dfc.netlify.app',
@@ -204,20 +215,8 @@ app.get('/', (req, res) => {
   res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
 });
 
-// Routes
-import authRoutes from './routes/auth.js';
-import userRoutes from './routes/userRoutes.js';
-import postRoutes from './routes/postRoutes.js';
-import resourceRoutes from './routes/resourceRoutes.js';
-import mentorRoutes from './routes/mentorRoutes.js';
-import leaderboardRoutes from './routes/leaderboardRoutes.js';
-import followRoutes from './routes/followRoutes.js';
-import opportunityRoutes from './routes/opportunityRoutes.js';
-import chatRoutes from './routes/chatRoutes.js';
-import campusWallRoutes from './routes/campusWallRoutes.js';
-import collegeRoutes from './routes/collegeRoutes.js';
-
-app.use('/api/auth', authRoutes);
+// Auth Routes (including signup)
+app.use('/api/auth', authRoutes);  // Include signup route here
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/resources', resourceRoutes);
