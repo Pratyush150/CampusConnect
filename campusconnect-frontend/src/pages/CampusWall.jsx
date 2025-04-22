@@ -1,54 +1,57 @@
-// Import React and useState, useEffect for state and fetching
+// Import React and hooks
 import React, { useState, useEffect } from "react";
 
-// Main component
-const CampusWall = () => {
-  // State to hold all posts fetched from the backend
-  const [posts, setPosts] = useState([]);
+// Base API URL from environment
+const API_URL = import.meta.env.VITE_API_URL;
 
-  // State for new post text input
+const CampusWall = () => {
+  const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
 
-  // Fetch posts from the backend when the component mounts
+  // Fetch posts on mount
   useEffect(() => {
-    fetch("http://localhost:5000/api/campuswall")
-      .then((res) => res.json())
-      .then((data) => setPosts(data.reverse())) // show latest first
-      .catch((err) => console.error("Error fetching posts:", err));
+    fetch(`${API_URL}/campuswall`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch posts");
+        return res.json();
+      })
+      .then((data) => setPosts(data.reverse()))
+      .catch((err) => console.error("❌ Error fetching posts:", err));
   }, []);
 
-  // Function to handle post creation
+  // Create a new post
   const handleCreatePost = () => {
-    if (newPost.trim()) {
-      const postData = {
-        user: "John Doe", // replace with actual logged in user
-        college: "ABC College", // replace with user's college
-        content: newPost,
-      };
+    if (!newPost.trim()) return;
 
-      // Send the post to the backend
-      fetch("http://localhost:5000/api/campuswall", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
+    const postData = {
+      user: "John Doe", // TODO: Replace with actual logged-in user
+      college: "ABC College", // TODO: Replace with actual user college
+      content: newPost,
+    };
+
+    fetch(`${API_URL}/campuswall`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(postData),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to create post");
+        return res.json();
       })
-        .then((res) => res.json())
-        .then((savedPost) => {
-          // Add the new post to the top of the post list
-          setPosts([savedPost, ...posts]);
-          setNewPost(""); // Clear input
-        })
-        .catch((err) => console.error("Error creating post:", err));
-    }
+      .then((savedPost) => {
+        setPosts([savedPost, ...posts]);
+        setNewPost("");
+      })
+      .catch((err) => console.error("❌ Error creating post:", err));
   };
 
   return (
     <div className="p-6 bg-white dark:bg-gray-900 rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">🌐 CampusWall</h2>
 
-      {/* Text area to create a post */}
+      {/* Post input */}
       <div className="mb-6">
         <textarea
           value={newPost}
@@ -64,10 +67,10 @@ const CampusWall = () => {
         </button>
       </div>
 
-      {/* Display all posts */}
+      {/* Render posts */}
       {posts.map((post) => (
         <div
-          key={post._id}
+          key={post._id || post.id}
           className="mb-5 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border dark:border-gray-700"
         >
           <div className="flex justify-between items-start">
@@ -87,4 +90,5 @@ const CampusWall = () => {
 };
 
 export default CampusWall;
+
 

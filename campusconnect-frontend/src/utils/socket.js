@@ -1,10 +1,10 @@
 // socket.js
 import { io } from 'socket.io-client';
 
-const backendURL = import.meta.env.VITE_BACKEND_URL;
+const backendURL = import.meta.env.VITE_SOCKET_URL;
 
 if (!backendURL) {
-  console.warn('⚠️ VITE_BACKEND_URL is not defined in .env');
+  console.warn('⚠️ VITE_SOCKET_URL is not defined in .env');
 }
 
 const socket = io(backendURL, {
