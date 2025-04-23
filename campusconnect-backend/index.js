@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 import fetch from 'node-fetch';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import pkg from 'pg';
 import multer from 'multer';
 import fs from 'fs';
@@ -140,9 +140,10 @@ io.on('connection', (socket) => {
   });
 });
 
+// Rate limiting for OpenAI API usage
 const openAiLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 5,
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Allow max 5 requests per minute
   message: 'Too many requests to AI in a short time. Please wait.',
 });
 
@@ -176,12 +177,14 @@ app.post('/api/chat', openAiLimiter, async (req, res) => {
   }
 });
 
+// File Upload Endpoint
 app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
   const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({ fileUrl });
 });
 
+// Fetch Chat History
 app.get('/api/chat/history/:roomId', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -194,6 +197,7 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
   }
 });
 
+// Save Chat Message
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
@@ -224,8 +228,10 @@ app.post('/api/chat/save', async (req, res) => {
   }
 });
 
+// Health check endpoint
 app.get('/', (_, res) => res.send('CampusConnect Backend with Real-time Chat is Running 🚀'));
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
@@ -239,11 +245,13 @@ app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
 
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ Uncaught Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
