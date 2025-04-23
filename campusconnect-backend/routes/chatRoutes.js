@@ -4,11 +4,8 @@ import {
   getConversationsByUser,
   sendMessage,
   getMessages,
-  markMessageAsSeen,
-  handleFileUpload
+  markMessageAsSeen
 } from '../controllers/chatController.js';
-
-import uploadMiddleware from '../middleware/uploadMiddleware.js'; // if using multer
 
 const router = express.Router();
 
@@ -19,6 +16,6 @@ router.post('/messages', sendMessage);
 router.get('/messages', getMessages); // expects ?conversationId=xyz
 router.post('/messages/:id/seen', markMessageAsSeen);
 
-router.post('/upload', uploadMiddleware.single('file'), handleFileUpload);
+// router.post('/upload', uploadMiddleware.single('file'), handleFileUpload); // Uncomment if needed later
 
 export default router;
