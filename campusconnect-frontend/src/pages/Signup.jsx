@@ -51,13 +51,12 @@ const Signup = () => {
       let collegeIdImageUrl = null;
 
       if (collegeID) {
-        // Step 1: Prepare Cloudinary upload data
         const timestamp = Math.floor(Date.now() / 1000);
         const publicId = `${timestamp}_collegeId`;
         const folder = 'CampusConnect/collegeIds';
 
-        // Step 2: Get signature from backend
-        const sigRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cloudinary/signature`, {
+        const backendURL = import.meta.env.VITE_API_BASE_URL || "https://campusconnect-production-282d.up.railway.app";
+        const sigRes = await fetch(`${backendURL}/api/cloudinary/signature`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ public_id: publicId, timestamp, folder }),
@@ -65,7 +64,6 @@ const Signup = () => {
 
         const { signature } = await sigRes.json();
 
-        // Step 3: Upload image to Cloudinary
         const formDataImage = new FormData();
         formDataImage.append('file', collegeID);
         formDataImage.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
@@ -83,7 +81,6 @@ const Signup = () => {
         collegeIdImageUrl = uploaded.secure_url;
       }
 
-      // Step 4: Send final registration data to backend
       await API.post('/auth/register', {
         ...formData,
         collegeIdImage: collegeIdImageUrl,
@@ -106,12 +103,14 @@ const Signup = () => {
         {['name', 'email', 'password', 'college'].map((field) => (
           <input
             key={field}
+            id={field}
             type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
             name={field}
             value={formData[field]}
             placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
+            autoComplete="off"
           />
         ))}
 
@@ -140,6 +139,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
 
 
 
