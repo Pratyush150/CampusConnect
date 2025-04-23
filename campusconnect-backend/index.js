@@ -11,8 +11,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
-// Routes
+// Route Imports
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
@@ -26,7 +27,6 @@ import campusWallRoutes from './routes/campusWallRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import cloudinaryRoutes from './routes/cloudinaryRoutes.js';
 
-// Initial Setup
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,40 +37,36 @@ const pool = new pkg.Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// File Upload Setup
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+  destination: (_, __, cb) => cb(null, uploadDir),
+  filename: (_, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
+
 const upload = multer({
   storage,
-  fileFilter: (req, file, cb) => {
+  fileFilter: (_, file, cb) => {
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type'));
-    }
+    cb(null, allowedTypes.includes(file.mimetype));
   },
 });
 
-// Express App
 const app = express();
 const server = http.createServer(app);
 
-// CORS Configuration
+// Middleware to handle cookies
+app.use(cookieParser());
+
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://zingy-licorice-136dfc.netlify.app', // Replace with actual production URL
+  'https://zingy-licorice-136dfc.netlify.app',
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use('/uploads', express.static(uploadDir));
 
-// Socket.IO Setup
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -78,20 +74,18 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+
 app.set('io', io);
 
-// Socket.IO Chat Events
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
 
   socket.on('join', (roomId) => {
-    if (!roomId) return;
-    socket.join(roomId);
-    console.log(`📥 User joined room: ${roomId}`);
+    if (roomId) socket.join(roomId);
   });
 
   socket.on('sendMessage', async ({ roomId, message }) => {
-    if (!roomId || !message || !message.senderId || !message.conversationId) return;
+    if (!roomId || !message?.senderId || !message?.conversationId) return;
 
     try {
       const saved = await prisma.message.create({
@@ -113,9 +107,6 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('receiveMessage', saved);
     } catch (err) {
       console.error('❌ Message save error:', err);
-      if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        console.error(err.message);
-      }
     }
   });
 
@@ -137,13 +128,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('typing', ({ conversationId, userId }) => {
-    if (!conversationId || !userId) return;
-    socket.to(conversationId).emit('userTyping', { userId });
+    if (conversationId && userId) socket.to(conversationId).emit('userTyping', { userId });
   });
 
   socket.on('stopTyping', ({ conversationId, userId }) => {
-    if (!conversationId || !userId) return;
-    socket.to(conversationId).emit('userStopTyping', { userId });
+    if (conversationId && userId) socket.to(conversationId).emit('userStopTyping', { userId });
   });
 
   socket.on('disconnect', () => {
@@ -151,14 +140,12 @@ io.on('connection', (socket) => {
   });
 });
 
-// Rate limiter for OpenAI endpoint
 const openAiLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
   message: 'Too many requests to AI in a short time. Please wait.',
 });
 
-// OpenAI Chat Endpoint
 app.post('/api/chat', openAiLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message is required' });
@@ -189,15 +176,12 @@ app.post('/api/chat', openAiLimiter, async (req, res) => {
   }
 });
 
-// File Upload Endpoint
 app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-
   const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({ fileUrl });
 });
 
-// Chat history
 app.get('/api/chat/history/:roomId', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -210,10 +194,10 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
   }
 });
 
-// Save message API
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
+
     const conversation = await prisma.conversation.upsert({
       where: { id: roomId },
       update: { updatedAt: new Date() },
@@ -240,12 +224,8 @@ app.post('/api/chat/save', async (req, res) => {
   }
 });
 
-// Health check
-app.get('/', (req, res) => {
-  res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
-});
+app.get('/', (_, res) => res.send('CampusConnect Backend with Real-time Chat is Running 🚀'));
 
-// ✅ API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
@@ -259,13 +239,11 @@ app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
 
-// Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ Uncaught Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);

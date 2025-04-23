@@ -37,10 +37,10 @@ model User {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  posts                Post[]
-  resources            Resource[]
-  events               Event[]
-  mentors              Mentor[]
+  posts                Post[] 
+  resources            Resource[] 
+  events               Event[] 
+  mentors              Mentor[] 
   followed             Follow[]       @relation("Follower")
   following            Follow[]       @relation("Following")
   appliedOpportunities Opportunity[]  @relation("AppliedOpportunities")
@@ -126,7 +126,7 @@ model Opportunity {
 model Conversation {
   id           String    @id @default(cuid())
   participants User[]    @relation("ConversationParticipants")
-  messages     Message[]
+  messages     Message[] 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }

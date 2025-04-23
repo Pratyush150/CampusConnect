@@ -1,16 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import ResendVerification from "../components/ResendVerification"; // Adjust path if moved
 
 const Login = () => {
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
 
-  // Validate form fields
+  useEffect(() => {
+    // Check for valid tokens and handle logout if needed
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/profile"); // Automatically navigate to profile if already logged in
+    }
+  }, [navigate]);
+
   const validateForm = () => {
     if (!email || !password) {
       setError("Please fill in both email and password.");
@@ -19,11 +27,10 @@ const Login = () => {
     return true;
   };
 
-  // Handle form submission
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");  // Clear previous errors
-    setLoading(true);  // Set loading state to true
+    setError("");
+    setLoading(true);
 
     if (!validateForm()) {
       setLoading(false);
@@ -31,19 +38,20 @@ const Login = () => {
     }
 
     try {
-      // Send login request to backend
       const res = await API.post("/auth/login", { email, password });
-
-      // Save token in local storage
+      // Store access token in local storage and refresh token in cookies
       localStorage.setItem("token", res.data.token);
-
-      // Navigate to the profile page on successful login
+      document.cookie = `refreshToken=${res.data.refreshToken}; path=/; Secure; HttpOnly`;
       navigate("/profile");
     } catch (err) {
-      // Set error message in case of failure
-      setError(err.response?.data?.message || "Invalid credentials, please try again.");
+      const message = err.response?.data?.message || "Invalid credentials, please try again.";
+      setError(message);
+
+      if (message.toLowerCase().includes("verify your email")) {
+        setShowResend(true);
+      }
     } finally {
-      setLoading(false);  // Set loading state back to false
+      setLoading(false);
     }
   };
 
@@ -51,11 +59,9 @@ const Login = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
 
-      {/* Error message display */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleLogin} autoComplete="off">
-        {/* Email Input */}
         <input
           type="email"
           placeholder="Email"
@@ -63,8 +69,6 @@ const Login = () => {
           onChange={(e) => setEmail(e.target.value)}
           className="w-full p-3 mb-4 border rounded-lg text-gray-800"
         />
-
-        {/* Password Input */}
         <input
           type="password"
           placeholder="Password"
@@ -72,8 +76,6 @@ const Login = () => {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full p-3 mb-4 border rounded-lg text-gray-800"
         />
-
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
@@ -82,11 +84,23 @@ const Login = () => {
           {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
+
+      {showResend && (
+        <div className="mt-6 border-t pt-4">
+          <p className="text-sm text-center text-gray-600 mb-2">
+            Didn’t receive a verification email?
+          </p>
+          <ResendVerification />
+        </div>
+      )}
     </div>
   );
 };
 
 export default Login;
+
+
+
 
 
 

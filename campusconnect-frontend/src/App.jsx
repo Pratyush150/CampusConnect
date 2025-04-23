@@ -1,3 +1,4 @@
+// src/App.jsx
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
@@ -16,9 +17,9 @@ const AppWithAuthCheck = () => {
 
   useEffect(() => {
     if (isAuthenticated()) {
-      setUser(getAuthToken());  // Set authenticated user info
+      setUser(getAuthToken());  // Set authenticated user info from token
     } else {
-      setUser(null);  // Clear user if not authenticated
+      setUser(null);  // Clear user info if not authenticated
     }
   }, [setUser]);
 
@@ -26,9 +27,11 @@ const AppWithAuthCheck = () => {
     <div className="App">
       <Navbar />
       <Routes>
+        {/* Redirect based on authentication state */}
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        {/* Protected routes with PrivateRoute wrapper */}
         <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><CollegeProfile /></PrivateRoute>} />
       </Routes>
@@ -46,7 +49,6 @@ const App = () => (
 );
 
 export default App;
-
 
 
 

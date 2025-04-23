@@ -1,6 +1,5 @@
-// src/utils/auth.js
-
 import { jwtDecode } from 'jwt-decode';  // For decoding JWT tokens
+import API from '../services/api';  // For calling your API to refresh the token
 
 // Store token in localStorage
 export const setAuthToken = (token) => {
@@ -18,7 +17,7 @@ export const getAuthToken = () => {
 };
 
 // Check if token is valid and not expired
-export const isAuthenticated = () => {
+export const isAuthenticated = async () => {
   const token = getAuthToken();
   if (!token) return false;
 
@@ -29,11 +28,32 @@ export const isAuthenticated = () => {
     if (decodedToken && decodedToken.exp > Date.now() / 1000) {
       return true;
     } else {
-      removeAuthToken();  // Expired token should be removed
-      return false;
+      // If token is expired, attempt to refresh it
+      const refreshed = await refreshAccessToken();
+      return refreshed;
     }
   } catch (error) {
     removeAuthToken();  // Corrupted token should be removed
+    return false;
+  }
+};
+
+// Refresh access token using refresh token
+const refreshAccessToken = async () => {
+  try {
+    const response = await API.post('/auth/refresh-token');  // Adjust API endpoint if needed
+    const { token } = response.data;
+
+    if (token) {
+      setAuthToken(token);  // Store new access token
+      return true;
+    }
+
+    removeAuthToken();
+    return false;
+  } catch (error) {
+    console.error('Error refreshing token:', error);
+    removeAuthToken();
     return false;
   }
 };
@@ -42,5 +62,4 @@ export const isAuthenticated = () => {
 export const removeAuthToken = () => {
   localStorage.removeItem('authToken');
 };
-
 
