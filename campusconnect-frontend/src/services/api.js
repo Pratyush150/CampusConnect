@@ -12,7 +12,7 @@ const api = axios.create({
 // Attach JWT token from localStorage (if exists) to every request
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken(); // Function to get token from localStorage
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -45,7 +45,7 @@ api.interceptors.response.use(
 
         const newAccessToken = response.data.token;
         // Save new access token to localStorage
-        localStorage.setItem("token", newAccessToken);
+        setAuthToken(newAccessToken);
 
         // Update the original request with the new token
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
@@ -53,7 +53,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
         // Handle token refresh failure (e.g., log out user)
-        localStorage.removeItem("token");
+        removeAuthToken();
         window.location.href = "/login"; // Redirect to login page
         return Promise.reject(refreshError);
       }
@@ -62,9 +62,23 @@ api.interceptors.response.use(
   }
 );
 
-// Get refresh token from cookies (can also be implemented as per your cookie handling)
+// Function to get the access token from localStorage
+const getAuthToken = () => {
+  return localStorage.getItem("token");
+};
+
+// Function to save the access token to localStorage
+const setAuthToken = (token) => {
+  localStorage.setItem("token", token);
+};
+
+// Function to remove the access token from localStorage
+const removeAuthToken = () => {
+  localStorage.removeItem("token");
+};
+
+// Function to get refresh token from cookies (can be customized)
 const getRefreshToken = () => {
-  // Example: extract refreshToken from cookies (if set)
   const name = "refreshToken=";
   const decodedCookie = decodeURIComponent(document.cookie);
   const cookies = decodedCookie.split(";");
