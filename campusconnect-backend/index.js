@@ -4,12 +4,13 @@ import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 import fetch from 'node-fetch';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import pkg from 'pg';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import rateLimit from 'express-rate-limit';
 
 // Routes
 import authRoutes from './routes/auth.js';
@@ -23,7 +24,7 @@ import opportunityRoutes from './routes/opportunityRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import campusWallRoutes from './routes/campusWallRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
-import cloudinaryRoutes from "./routes/cloudinaryRoutes.js";
+import cloudinaryRoutes from './routes/cloudinaryRoutes.js';
 
 // Initial Setup
 dotenv.config();
@@ -44,7 +45,17 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
 });
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'));
+    }
+  },
+});
 
 // Express App
 const app = express();
@@ -53,7 +64,7 @@ const server = http.createServer(app);
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://zingy-licorice-136dfc.netlify.app', // Update with production frontend domain
+  'https://zingy-licorice-136dfc.netlify.app', // Replace with actual production URL
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
@@ -74,11 +85,14 @@ io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
 
   socket.on('join', (roomId) => {
+    if (!roomId) return;
     socket.join(roomId);
     console.log(`📥 User joined room: ${roomId}`);
   });
 
   socket.on('sendMessage', async ({ roomId, message }) => {
+    if (!roomId || !message || !message.senderId || !message.conversationId) return;
+
     try {
       const saved = await prisma.message.create({
         data: {
@@ -99,10 +113,15 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('receiveMessage', saved);
     } catch (err) {
       console.error('❌ Message save error:', err);
+      if (err instanceof Prisma.PrismaClientKnownRequestError) {
+        console.error(err.message);
+      }
     }
   });
 
   socket.on('markSeen', async ({ conversationId, userId }) => {
+    if (!conversationId || !userId) return;
+
     try {
       await prisma.message.updateMany({
         where: {
@@ -118,10 +137,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('typing', ({ conversationId, userId }) => {
+    if (!conversationId || !userId) return;
     socket.to(conversationId).emit('userTyping', { userId });
   });
 
   socket.on('stopTyping', ({ conversationId, userId }) => {
+    if (!conversationId || !userId) return;
     socket.to(conversationId).emit('userStopTyping', { userId });
   });
 
@@ -130,8 +151,15 @@ io.on('connection', (socket) => {
   });
 });
 
+// Rate limiter for OpenAI endpoint
+const openAiLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: 'Too many requests to AI in a short time. Please wait.',
+});
+
 // OpenAI Chat Endpoint
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', openAiLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: 'Message is required' });
 
@@ -169,7 +197,7 @@ app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   res.json({ fileUrl });
 });
 
-// Chat History
+// Chat history
 app.get('/api/chat/history/:roomId', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -182,11 +210,10 @@ app.get('/api/chat/history/:roomId', async (req, res) => {
   }
 });
 
-// Optional Save Chat API
+// Save message API
 app.post('/api/chat/save', async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
-
     const conversation = await prisma.conversation.upsert({
       where: { id: roomId },
       update: { updatedAt: new Date() },
@@ -213,12 +240,12 @@ app.post('/api/chat/save', async (req, res) => {
   }
 });
 
-// Health Check
+// Health check
 app.get('/', (req, res) => {
   res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
 });
 
-// API Routes
+// ✅ API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
@@ -232,13 +259,13 @@ app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
 app.use('/api/cloudinary', cloudinaryRoutes);
 
-// Global Error Handler
+// Global error handler
 app.use((err, req, res, next) => {
   console.error('❌ Uncaught Error:', err.stack);
   res.status(500).json({ message: 'Internal Server Error' });
 });
 
-// Start Server
+// Start server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
