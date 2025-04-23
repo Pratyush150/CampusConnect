@@ -12,8 +12,8 @@ const Signup = () => {
     college: '',
   });
 
-  const [collegeID, setCollegeID] = useState(null);
-  const [preview, setPreview] = useState('');
+  // const [collegeID, setCollegeID] = useState(null);
+  // const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,6 +21,7 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  /*
   const handleIDUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -28,6 +29,7 @@ const Signup = () => {
       setPreview(URL.createObjectURL(file));
     }
   };
+  */
 
   const validateForm = () => {
     if (!formData.name || !formData.email || !formData.password || !formData.college) {
@@ -48,43 +50,8 @@ const Signup = () => {
     }
 
     try {
-      let collegeIdImageUrl = null;
-
-      if (collegeID) {
-        const timestamp = Math.floor(Date.now() / 1000);
-        const publicId = `${timestamp}_collegeId`;
-        const folder = 'CampusConnect/collegeIds';
-
-        const backendURL = import.meta.env.VITE_API_URL;
-        const sigRes = await fetch(`${backendURL}/cloudinary/signature`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ public_id: publicId, timestamp, folder }),
-        });
-
-        if (!sigRes.ok) throw new Error('Failed to get Cloudinary signature.');
-        const { signature } = await sigRes.json();
-
-        const formDataImage = new FormData();
-        formDataImage.append('file', collegeID);
-        formDataImage.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
-        formDataImage.append('timestamp', timestamp);
-        formDataImage.append('public_id', publicId);
-        formDataImage.append('folder', folder);
-        formDataImage.append('signature', signature);
-
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-          {
-            method: 'POST',
-            body: formDataImage,
-          }
-        );
-
-        if (!uploadRes.ok) throw new Error('Image upload failed.');
-        const uploaded = await uploadRes.json();
-        collegeIdImageUrl = uploaded.secure_url;
-      }
+      // Image upload disabled for now
+      const collegeIdImageUrl = null;
 
       const registerRes = await API.post('/auth/register', {
         ...formData,
@@ -124,6 +91,7 @@ const Signup = () => {
           />
         ))}
 
+        {/*
         <div className="mb-4">
           <label htmlFor="collegeID" className="block text-gray-800 dark:text-white">Upload College ID</label>
           <input
@@ -135,6 +103,7 @@ const Signup = () => {
           />
           {preview && <img src={preview} alt="Preview" className="mt-2 rounded-lg max-w-xs" />}
         </div>
+        */}
 
         <button
           type="submit"

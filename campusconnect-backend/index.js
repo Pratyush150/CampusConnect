@@ -10,7 +10,9 @@ import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoutes from './routes/auth.js';  // Correctly import auth routes
+
+// Routes
+import authRoutes from './routes/auth.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
 import resourceRoutes from './routes/resourceRoutes.js';
@@ -22,6 +24,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import campusWallRoutes from './routes/campusWallRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
 import cloudinaryRoutes from "./routes/cloudinaryRoutes.js";
+
 // Initial Setup
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -50,7 +53,7 @@ const server = http.createServer(app);
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://zingy-licorice-136dfc.netlify.app',
+  'https://zingy-licorice-136dfc.netlify.app', // Update with production frontend domain
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
@@ -66,7 +69,7 @@ const io = new Server(server, {
 });
 app.set('io', io);
 
-// Socket.IO Events
+// Socket.IO Chat Events
 io.on('connection', (socket) => {
   console.log('🔌 Client connected:', socket.id);
 
@@ -166,7 +169,7 @@ app.post('/api/chat/upload', upload.single('file'), (req, res) => {
   res.json({ fileUrl });
 });
 
-// Chat History Endpoint
+// Chat History
 app.get('/api/chat/history/:roomId', async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -215,8 +218,8 @@ app.get('/', (req, res) => {
   res.send('CampusConnect Backend with Real-time Chat is Running 🚀');
 });
 
-// Auth Routes (including signup)
-app.use('/api/auth', authRoutes);  // Include signup route here
+// API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/resources', resourceRoutes);
@@ -227,7 +230,7 @@ app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
-app.use("/api/cloudinary", cloudinaryRoutes);
+app.use('/api/cloudinary', cloudinaryRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
