@@ -94,5 +94,9 @@ const getRefreshToken = () => {
   return "";
 };
 
+// Export the functions to make them available to other parts of your app
+export { getAuthToken, setAuthToken, removeAuthToken };
+
 export default api;
+
 
