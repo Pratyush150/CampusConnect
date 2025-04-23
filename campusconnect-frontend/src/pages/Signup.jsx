@@ -55,13 +55,14 @@ const Signup = () => {
         const publicId = `${timestamp}_collegeId`;
         const folder = 'CampusConnect/collegeIds';
 
-        const backendURL = import.meta.env.VITE_API_BASE_URL || "https://campusconnect-production-282d.up.railway.app";
-        const sigRes = await fetch(`${backendURL}/api/cloudinary/signature`, {
+        const backendURL = import.meta.env.VITE_API_URL;
+        const sigRes = await fetch(`${backendURL}/cloudinary/signature`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ public_id: publicId, timestamp, folder }),
         });
 
+        if (!sigRes.ok) throw new Error('Failed to get Cloudinary signature.');
         const { signature } = await sigRes.json();
 
         const formDataImage = new FormData();
@@ -72,23 +73,32 @@ const Signup = () => {
         formDataImage.append('folder', folder);
         formDataImage.append('signature', signature);
 
-        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
-          method: 'POST',
-          body: formDataImage,
-        });
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          {
+            method: 'POST',
+            body: formDataImage,
+          }
+        );
 
+        if (!uploadRes.ok) throw new Error('Image upload failed.');
         const uploaded = await uploadRes.json();
         collegeIdImageUrl = uploaded.secure_url;
       }
 
-      await API.post('/auth/register', {
+      const registerRes = await API.post('/auth/register', {
         ...formData,
         collegeIdImage: collegeIdImageUrl,
       });
 
-      navigate('/profile');
+      if (registerRes.status === 201 || registerRes.status === 200) {
+        navigate('/profile');
+      } else {
+        throw new Error('Registration failed.');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'An error occurred during sign-up.');
+      console.error(err);
+      setError(err.message || 'An error occurred during sign-up.');
     } finally {
       setLoading(false);
     }
@@ -139,6 +149,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
 
 
 
