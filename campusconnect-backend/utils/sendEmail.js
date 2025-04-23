@@ -1,30 +1,29 @@
 import nodemailer from "nodemailer";
 
-// Create a transporter using Gmail service and credentials from environment variables
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
+  secure: false, // true for 465, false for other ports like 587
   auth: {
-    user: process.env.EMAIL_USER,  // Your Gmail address
-    pass: process.env.EMAIL_PASS,  // App Password (not your actual Gmail password)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-// Function to send an email
-const sendEmail = async (to, subject, html) => {
-  const mailOptions = {
-    from: `"CampusConnect" <${process.env.EMAIL_USER}>`,  // Sender address
-    to,  // Recipient address
-    subject,  // Subject of the email
-    html,  // HTML content of the email
-  };
-
-  // Send email and handle potential errors
+const sendEmail = async ({ to, subject, html, text }) => {
   try {
-    await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully to:", to);
-  } catch (error) {
-    console.error("Error sending email:", error);
-    throw new Error("Failed to send email");
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html,
+      text,
+    });
+
+    console.log("Email sent: %s", info.messageId);
+  } catch (err) {
+    console.error("Failed to send email:", err);
+    throw new Error("Email sending failed");
   }
 };
 
