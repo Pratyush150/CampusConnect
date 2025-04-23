@@ -52,7 +52,7 @@ export const registerUser = async (req, res) => {
       data: { verificationToken },
     });
 
-    const verificationUrl = `${process.env.SERVER_URL}/auth/verify/${verificationToken}`;
+    const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     const html = `
       <h2>Welcome to CampusConnect, ${name}!</h2>
       <p>Please verify your email by clicking the link below:</p>
@@ -81,7 +81,7 @@ export const registerUser = async (req, res) => {
 
 // VERIFY EMAIL
 export const verifyEmail = async (req, res) => {
-  const { token } = req.params;
+  const { token } = req.query;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

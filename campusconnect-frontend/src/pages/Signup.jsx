@@ -12,8 +12,8 @@ const Signup = () => {
     college: '',
   });
 
-  // const [collegeID, setCollegeID] = useState(null);
-  // const [preview, setPreview] = useState('');
+  const [collegeIdImage, setCollegeIdImage] = useState(null);
+  const [preview, setPreview] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,19 +21,18 @@ const Signup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  /*
   const handleIDUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setCollegeID(file);
+      setCollegeIdImage(file);
       setPreview(URL.createObjectURL(file));
     }
   };
-  */
 
   const validateForm = () => {
-    if (!formData.name || !formData.email || !formData.password || !formData.college) {
-      setError('Please fill all required fields.');
+    const { name, email, password, college } = formData;
+    if (!name || !email || !password || !college || !collegeIdImage) {
+      setError('Please fill all required fields and upload your College ID.');
       return false;
     }
     return true;
@@ -50,22 +49,25 @@ const Signup = () => {
     }
 
     try {
-      // Image upload disabled for now
-      const collegeIdImageUrl = null;
+      const data = new FormData();
+      data.append('name', formData.name);
+      data.append('email', formData.email);
+      data.append('password', formData.password);
+      data.append('college', formData.college);
+      data.append('collegeIdImage', collegeIdImage); // ✅ Must match backend field name
 
-      const registerRes = await API.post('/auth/register', {
-        ...formData,
-        collegeIdImage: collegeIdImageUrl,
+      const response = await API.post('/auth/register', data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (registerRes.status === 201 || registerRes.status === 200) {
+      if (response.status === 201 || response.status === 200) {
         navigate('/profile');
       } else {
         throw new Error('Registration failed.');
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || 'An error occurred during sign-up.');
+      setError(err.response?.data?.message || err.message || 'An error occurred during sign-up.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,7 @@ const Signup = () => {
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      <form onSubmit={handleSubmit} autoComplete="off">
+      <form onSubmit={handleSubmit} autoComplete="off" encType="multipart/form-data">
         {['name', 'email', 'password', 'college'].map((field) => (
           <input
             key={field}
@@ -87,23 +89,24 @@ const Signup = () => {
             placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
-            autoComplete="off"
+            required
           />
         ))}
 
-        {/*
         <div className="mb-4">
-          <label htmlFor="collegeID" className="block text-gray-800 dark:text-white">Upload College ID</label>
+          <label htmlFor="collegeIdImage" className="block text-gray-800 dark:text-white mb-2">
+            Upload College ID
+          </label>
           <input
             type="file"
-            id="collegeID"
+            id="collegeIdImage"
             accept="image/*"
             className="w-full p-3 border rounded-lg text-gray-800"
             onChange={handleIDUpload}
+            required
           />
           {preview && <img src={preview} alt="Preview" className="mt-2 rounded-lg max-w-xs" />}
         </div>
-        */}
 
         <button
           type="submit"

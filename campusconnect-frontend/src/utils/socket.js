@@ -1,10 +1,10 @@
-// socket.js
+// src/socket.js
 import { io } from 'socket.io-client';
 
-const backendURL = import.meta.env.VITE_SOCKET_URL;
+const backendURL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
-if (!backendURL) {
-  console.warn('⚠️ VITE_SOCKET_URL is not defined in .env');
+if (!import.meta.env.VITE_SOCKET_URL) {
+  console.warn('⚠️ VITE_SOCKET_URL not defined in .env — using fallback:', backendURL);
 }
 
 const socket = io(backendURL, {
@@ -13,19 +13,20 @@ const socket = io(backendURL, {
   autoConnect: true,
 });
 
-// ✅ Connection
+// ✅ Successful connection
 socket.on('connect', () => {
-  console.log('✅ Connected to socket server:', socket.id || 'no socket id');
+  console.log(`✅ Connected to socket server (id: ${socket.id})`);
 });
 
 // ❌ Disconnection
-socket.on('disconnect', () => {
-  console.log('❌ Disconnected from socket server');
+socket.on('disconnect', (reason) => {
+  console.warn(`❌ Disconnected from socket server — Reason: ${reason}`);
 });
 
-// ⚠️ Error
+// ⚠️ Connection error
 socket.on('connect_error', (err) => {
   console.error('⚠️ Socket connection error:', err.message);
 });
 
 export default socket;
+
