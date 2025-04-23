@@ -56,6 +56,9 @@ const upload = multer({
 const app = express();
 const server = http.createServer(app);
 
+// Enable trust proxy for accurate rate limiting
+app.set('trust proxy', 1); // Trust the first proxy
+
 // Middleware to handle cookies
 app.use(cookieParser());
 
