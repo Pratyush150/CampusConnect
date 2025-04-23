@@ -15,6 +15,8 @@ model User {
   college               String?
   collegeIdImage        String?           // Final URL from Cloudinary
   role                  String            @default("USER")
+  isVerified            Boolean           @default(false)     // ✅ Added
+  verificationToken     String?                              // ✅ Added
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
