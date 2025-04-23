@@ -17,21 +17,18 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle input change for form data
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle file upload for college ID image
   const handleIDUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
       setCollegeID(file);
-      setPreview(URL.createObjectURL(file));  // Show image preview
+      setPreview(URL.createObjectURL(file));
     }
   };
 
-  // Validate the form before submission
   const validateForm = () => {
     if (!formData.name || !formData.email || !formData.password || !formData.college) {
       setError('Please fill all required fields.');
@@ -40,28 +37,63 @@ const Signup = () => {
     return true;
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');  // Reset error message
-    setLoading(true);  // Set loading state to true
+    setError('');
+    setLoading(true);
 
     if (!validateForm()) {
       setLoading(false);
       return;
     }
 
-    const data = new FormData();
-    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-    if (collegeID) data.append('collegeIdImage', collegeID); // Correct field name for file upload
-
     try {
-      await API.post('/auth/register', data);  // Send form data to backend API
-      navigate('/profile');  // Navigate to the profile page after successful signup
+      let collegeIdImageUrl = null;
+
+      if (collegeID) {
+        // Step 1: Prepare Cloudinary upload data
+        const timestamp = Math.floor(Date.now() / 1000);
+        const publicId = `${timestamp}_collegeId`;
+        const folder = 'CampusConnect/collegeIds';
+
+        // Step 2: Get signature from backend
+        const sigRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/cloudinary/signature`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ public_id: publicId, timestamp, folder }),
+        });
+
+        const { signature } = await sigRes.json();
+
+        // Step 3: Upload image to Cloudinary
+        const formDataImage = new FormData();
+        formDataImage.append('file', collegeID);
+        formDataImage.append('api_key', import.meta.env.VITE_CLOUDINARY_API_KEY);
+        formDataImage.append('timestamp', timestamp);
+        formDataImage.append('public_id', publicId);
+        formDataImage.append('folder', folder);
+        formDataImage.append('signature', signature);
+
+        const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, {
+          method: 'POST',
+          body: formDataImage,
+        });
+
+        const uploaded = await uploadRes.json();
+        collegeIdImageUrl = uploaded.secure_url;
+      }
+
+      // Step 4: Send final registration data to backend
+      await API.post('/auth/register', {
+        ...formData,
+        collegeIdImage: collegeIdImageUrl,
+      });
+
+      navigate('/profile');
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during sign-up.');
     } finally {
-      setLoading(false);  // Set loading state back to false
+      setLoading(false);
     }
   };
 

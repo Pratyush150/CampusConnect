@@ -21,7 +21,7 @@ import opportunityRoutes from './routes/opportunityRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import campusWallRoutes from './routes/campusWallRoutes.js';
 import collegeRoutes from './routes/collegeRoutes.js';
-
+import cloudinaryRoutes from "./routes/cloudinaryRoutes.js";
 // Initial Setup
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -227,6 +227,7 @@ app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/campuswall', campusWallRoutes);
 app.use('/api', collegeRoutes);
+app.use("/api/cloudinary", cloudinaryRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
