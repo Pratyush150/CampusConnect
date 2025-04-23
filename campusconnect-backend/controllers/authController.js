@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import cloudinary from "../utils/cloudinaryConfig.js";
 import sendEmail from "../utils/sendEmail.js";
 
 const prisma = new PrismaClient();
@@ -12,10 +11,9 @@ const generateToken = (payload, expiresIn = "1h") => {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn });
 };
 
-// REGISTER USER
+// REGISTER USER (no college ID)
 export const registerUser = async (req, res) => {
   const { name, email, password, college } = req.body;
-  const collegeIDFile = req.file;
 
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -24,22 +22,12 @@ export const registerUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
-    let uploadedImageUrl = null;
-    if (collegeIDFile) {
-      const result = await cloudinary.uploader.upload(collegeIDFile.path, {
-        folder: "CampusConnect/collegeIds",
-        public_id: `${Date.now()}_collegeId`,
-      });
-      uploadedImageUrl = result.secure_url;
-    }
-
     const newUser = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
         college,
-        collegeIdImage: uploadedImageUrl,
         role: "USER",
         isVerified: false,
       },
@@ -78,6 +66,8 @@ export const registerUser = async (req, res) => {
     res.status(500).json({ message: "Server error during registration" });
   }
 };
+
+// (Verify Email, Login, and Refresh Token remain unchanged)
 
 // VERIFY EMAIL
 export const verifyEmail = async (req, res) => {

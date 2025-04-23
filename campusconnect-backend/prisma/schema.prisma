@@ -31,7 +31,6 @@ model User {
   email             String   @unique
   password          String
   college           String?
-  collegeIdImage    String? // Cloudinary final URL
   role              UserRole @default(USER)
   isVerified        Boolean  @default(false)
   verificationToken String?
