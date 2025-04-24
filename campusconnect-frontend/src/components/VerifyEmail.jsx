@@ -9,6 +9,8 @@ const VerifyEmail = () => {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    console.log("Verifying email...");  // Log for debugging
+
     const queryParams = new URLSearchParams(location.search);
     const token = queryParams.get('token');
 
@@ -21,11 +23,12 @@ const VerifyEmail = () => {
           setLoading(false);
           // Redirect to login page with the success message
           setTimeout(() => {
-            navigate('/login?verified=true');
+            navigate('/login?verified=true');  // Ensure this is working
           }, 3000); // Redirect after 3 seconds
         })
         .catch((error) => {
-          setMessage('Email verification failed. Please try again.');
+          console.error("Verification error: ", error);  // Log for debugging
+          setMessage('Email verification failed. Please try again later.');
           setLoading(false);
         });
     } else {
@@ -53,4 +56,5 @@ const VerifyEmail = () => {
 };
 
 export default VerifyEmail;
+
 
