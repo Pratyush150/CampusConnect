@@ -110,29 +110,33 @@ export const getMe = async (req, res) => {
 
 // Update User Profile
 export const updateUserProfile = async (req, res) => {
-    const { name, college, bio, avatar, interests } = req.body;
-  
-    try {
-      const userId = req.user.id; // Extracted by middleware from JWT
-  
-      const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-          name,
-          college,
-          bio,
-          avatar,
-          interests,
-        },
-      });
-  
-      res.json({
-        message: 'Profile updated successfully',
-        user: { ...updatedUser, password: undefined }, // exclude password
-      });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
-    }
+  const { name, college, bio, avatar, interests } = req.body;
+
+  if (!name || !college || !bio || !interests) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const userId = req.user.id; // Extracted by middleware from JWT
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name,
+        college,
+        bio,
+        avatar,
+        interests,
+      },
+    });
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: { ...updatedUser, password: undefined }, // exclude password
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 

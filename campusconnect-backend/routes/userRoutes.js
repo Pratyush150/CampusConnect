@@ -29,4 +29,3 @@ router.put("/profile", protect, updateUserProfile); // This route is protected, 
 export default router;
 
 
-
