@@ -213,7 +213,7 @@ app.post("/api/chat/save", async (req, res) => {
       create: {
         id: roomId,
         participants: {
-          connect: [{ id: senderId }, { id: receiverId }], // Connect participants
+          connect: [{ id: senderId }, { id: receiverId }],
         },
       },
     });

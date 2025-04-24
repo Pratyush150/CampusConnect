@@ -97,5 +97,3 @@ const getRefreshToken = () => {
 export { getAuthToken, setAuthToken, removeAuthToken, getRefreshToken };
 
 export default api;
-
-

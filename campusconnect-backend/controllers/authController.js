@@ -75,6 +75,8 @@ export const verifyOTP = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid or expired OTP." });
   }
 
+  console.log("OTP Verified for User:", user.email);  // Log for debugging
+
   // Mark user as verified
   await prisma.user.update({
     where: { id: user.id },
@@ -83,6 +85,7 @@ export const verifyOTP = asyncHandler(async (req, res) => {
 
   return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
 });
+
 
 // RESEND OTP
 export const resendOTP = asyncHandler(async (req, res) => {
@@ -145,6 +148,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: "User not found" });
+
+  console.log("User found:", user);  // Log user for debugging
   if (!user.isVerified) return res.status(401).json({ message: "Please verify your email first." });
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -174,6 +179,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     user: userSafe,
   });
 });
+
 
 // REFRESH ACCESS TOKEN
 export const refreshAccessToken = asyncHandler(async (req, res) => {

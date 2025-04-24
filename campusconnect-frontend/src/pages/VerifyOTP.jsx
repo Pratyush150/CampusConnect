@@ -9,6 +9,7 @@ const VerifyOTP = () => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false); // For disabling resend button during request
 
   // Retrieve the OTP from the URL query parameters
   const queryParams = new URLSearchParams(location.search);
@@ -53,11 +54,15 @@ const VerifyOTP = () => {
       return;
     }
 
+    setResendLoading(true);  // Disable resend button while making the request
+
     try {
       const res = await API.post("/auth/resend-otp", { email });
       setMessage(res.data.message); // Success message after OTP resend
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend OTP.");
+    } finally {
+      setResendLoading(false);  // Re-enable resend button after request is finished
     }
   };
 
@@ -97,8 +102,9 @@ const VerifyOTP = () => {
             href="#"
             className="text-blue-600 hover:text-blue-700"
             onClick={handleResendOTP}
+            disabled={resendLoading}  // Disable resend button while request is being made
           >
-            Resend OTP
+            {resendLoading ? "Sending..." : "Resend OTP"}
           </a>
         </p>
       </div>
@@ -107,4 +113,5 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+
 

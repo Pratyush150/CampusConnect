@@ -4,8 +4,8 @@ import {
   registerUser,
   loginUser,
   verifyEmail,
-  verifyOTP, // OTP verification route
-  resendOTP, // Resend OTP route
+  verifyOTP,
+  resendOTP,
   refreshAccessToken,
   resendVerificationEmail,
   logoutUser,
@@ -13,39 +13,32 @@ import {
 
 const router = express.Router();
 
-// @route   POST /api/auth/register
-// @desc    Register a new user
+// User Registration Routes
 router.post("/register", authLimiter, registerUser);
 
-// @route   POST /api/auth/login
-// @desc    Login user and return tokens
+// User Login Routes
 router.post("/login", authLimiter, loginUser);
 
-// @route   GET /api/auth/verify-email?token=
-// @desc    Verify email using token from email
+// Email Verification Route
 router.get("/verify-email", verifyEmail);
 
-// @route   GET /api/auth/verify-otp?otp=
-// @desc    Verify OTP
+// OTP Verification Route
 router.get("/verify-otp", verifyOTP); // OTP verification route
 
-// @route   POST /api/auth/resend-otp
-// @desc    Resend OTP for email verification
+// Resend OTP Route (for email verification)
 router.post("/resend-otp", authLimiter, resendOTP); // Resend OTP route
 
-// @route   POST /api/auth/refresh-token
-// @desc    Get new access token using refresh token
+// Refresh Token Route (to get new access token)
 router.post("/refresh-token", refreshAccessToken);
 
-// @route   POST /api/auth/resend-verification
-// @desc    Resend verification email
+// Resend Verification Email Route
 router.post("/resend-verification", authLimiter, resendVerificationEmail);
 
-// @route   POST /api/auth/logout
-// @desc    Logout user and clear refresh token
+// User Logout Route
 router.post("/logout", logoutUser);
 
 export default router;
+
 
 
 
