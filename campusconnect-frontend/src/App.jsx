@@ -9,6 +9,7 @@ import { isAuthenticated, getAuthToken } from './utils/auth';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import VerifyEmail from './pages/VerifyEmail';
 import CollegeDashboard from './pages/CollegeDashboard';
 import CollegeProfile from './pages/CollegeProfile';
 
@@ -35,6 +36,7 @@ const AppWithAuthCheck = () => {
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><CollegeProfile /></PrivateRoute>} />
