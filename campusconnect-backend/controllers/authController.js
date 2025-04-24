@@ -9,6 +9,7 @@ import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
+// Function to generate JWT token
 const generateToken = (payload, secret, expiresIn) => jwt.sign(payload, secret, { expiresIn });
 
 // REGISTER
@@ -225,3 +226,4 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Password reset successful" });
 });
+
