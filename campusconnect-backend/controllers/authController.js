@@ -5,6 +5,7 @@ import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/sendEmail.js";
 import verificationTemplate from "../utils/emailTemplates/verificationEmail.js";
 import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js";
+import { generateOTP, validateOTP } from "../utils/otpUtils.js"; // New utility file for OTP handling
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -32,52 +33,58 @@ export const registerUser = asyncHandler(async (req, res) => {
     },
   });
 
-  const verificationToken = generateToken({ userId: newUser.id }, process.env.JWT_SECRET, "15m");
+  // Generate OTP
+  const otp = generateOTP();
 
+  // Store OTP and its expiration time
   await prisma.user.update({
     where: { id: newUser.id },
-    data: { verificationToken },
+    data: { otp, otpExpiration: new Date(Date.now() + 10 * 60 * 1000) }, // OTP valid for 10 minutes
   });
 
-  const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
-  
-  // Ensure name is passed correctly to the email template
+  const otpUrl = `${process.env.CLIENT_URL}/verify-otp?otp=${otp}`;
+
   await sendEmail({
     to: normalizedEmail,
-    subject: "Verify your CampusConnect Account",
-    html: verificationTemplate(newUser.name, verificationUrl), // Correctly passing name
-    text: `Verify your email here: ${verificationUrl}`,
+    subject: "Verify your CampusConnect Account with OTP",
+    html: `<p>Your OTP for verification is: <strong>${otp}</strong></p><p><a href="${otpUrl}">Verify OTP here</a></p>`,
+    text: `Your OTP for verification is: ${otp}. Verify your email here: ${otpUrl}`,
   });
 
-  const { password: _, verificationToken: __, ...userSafe } = newUser;
+  const { password: _, otp: __, otpExpiration: ___, ...userSafe } = newUser;
 
   res.status(201).json({
-    message: "Registration successful. Please check your email to verify.",
+    message: "Registration successful. Please check your email for OTP.",
     user: userSafe,
   });
 });
 
-// VERIFY EMAIL
-export const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.query;
+// VERIFY OTP
+export const verifyOTP = asyncHandler(async (req, res) => {
+  const { otp } = req.query;
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+  const user = await prisma.user.findFirst({
+    where: {
+      otp: otp,
+      otpExpiration: { gte: new Date() }, // Ensure OTP is still valid
+    },
+  });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.isVerified) return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { isVerified: true, verificationToken: null },
-    });
-
-    return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
-  } catch (error) {
-    return res.status(500).json({ message: "Failed to verify email" });
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired OTP." });
   }
+
+  // Mark user as verified
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isVerified: true, otp: null, otpExpiration: null },
+  });
+
+  return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
 });
+
+// LOGIN, REFRESH TOKEN, LOGOUT, AND OTHER FUNCTIONS...
+
 
 // LOGIN
 export const loginUser = asyncHandler(async (req, res) => {

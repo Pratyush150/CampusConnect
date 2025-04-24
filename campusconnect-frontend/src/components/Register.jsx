@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import API from "../services/api"; // Ensure this is correctly set up for API calls
+import API from "../services/api";  // Import API for making requests
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
@@ -27,10 +27,10 @@ const Register = () => {
     try {
       // Register the user by making API request
       const res = await API.post("/auth/register", { name, email, password });
-      setMessage(res.data.message); // success message from backend
+      setMessage(res.data.message); // Success message from backend
 
-      // Redirect to login page after successful registration
-      setTimeout(() => navigate("/login"), 5000); // Redirect after 5 seconds
+      // Redirect to OTP verification page after successful registration
+      setTimeout(() => navigate("/verify-otp"), 5000); // Redirect after 5 seconds
     } catch (err) {
       // Error handling, make sure to display proper error message from backend
       setError(err.response?.data?.message || "Failed to register. Please try again.");

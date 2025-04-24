@@ -34,6 +34,8 @@ model User {
   role              UserRole @default(USER)
   isVerified        Boolean  @default(false)
   verificationToken String?
+  otp               String?  // New field for OTP
+  otpExpiration     DateTime? // New field for OTP expiration time
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -48,7 +50,7 @@ model User {
   postedOpportunities  Opportunity[]  @relation("PostedOpportunities")
   conversations        Conversation[] @relation("ConversationParticipants")
   messagesSent         Message[]      @relation("UserMessagesSent")
-  campusWalls          CampusWall[]
+  campusWalls          CampusWall[] 
 }
 
 model Post {

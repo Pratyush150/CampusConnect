@@ -1,17 +1,17 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
-import Navbar from './components/Navbar';
-import PrivateRoute from './components/PrivateRoute';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import { isAuthenticated, getAuthToken } from './utils/auth';
+import Navbar from "./components/Navbar";
+import PrivateRoute from "./components/PrivateRoute";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { isAuthenticated, getAuthToken } from "./utils/auth";
 
-import Login from './pages/Login';
-import Signup from './pages/Signup';
-import VerifyEmail from './components/VerifyEmail';
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import VerifyOTP from "./pages/VerifyOTP";  // Added OTP page for verification
 
-import CollegeDashboard from './pages/CollegeDashboard';
-import CollegeProfile from './pages/CollegeProfile';
+import CollegeDashboard from "./pages/CollegeDashboard";
+import CollegeProfile from "./pages/CollegeProfile";
 
 const AppWithAuthCheck = () => {
   const { user, setUser } = useAuth();
@@ -32,11 +32,10 @@ const AppWithAuthCheck = () => {
     <div className="App">
       <Navbar />
       <Routes>
-        {/* Redirect to dashboard if authenticated, otherwise login page */}
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} /> {/* OTP page */}
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><CollegeProfile /></PrivateRoute>} />
