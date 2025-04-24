@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../services/api';
+import API from '../services/api'; // Make sure API is correctly set up for sending requests
 
 const ResendVerification = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +13,15 @@ const ResendVerification = () => {
     setError('');
     setLoading(true);
 
+    // Check if the email is valid before making the API call
+    if (!email) {
+      setError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+
     try {
+      // Send the request to the backend to resend the verification email
       const res = await API.post('/auth/resend-verification', { email });
       setMessage(res.data.message || 'Verification email sent.');
     } catch (err) {
@@ -50,4 +58,5 @@ const ResendVerification = () => {
 };
 
 export default ResendVerification;
+
 

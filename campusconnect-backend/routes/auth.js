@@ -1,6 +1,5 @@
 import express from "express";
 import { authLimiter } from "../middleware/rateLimiter.js";
-
 import {
   registerUser,
   loginUser,
@@ -37,6 +36,7 @@ router.post("/resend-verification", authLimiter, resendVerificationEmail);
 router.post("/logout", logoutUser);
 
 export default router;
+
 
 
 

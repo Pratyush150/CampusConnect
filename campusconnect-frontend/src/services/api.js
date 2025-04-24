@@ -82,20 +82,19 @@ const getRefreshToken = () => {
   const name = "refreshToken=";
   const decodedCookie = decodeURIComponent(document.cookie);
   const cookies = decodedCookie.split(";");
+
+  // Loop through cookies to find refreshToken
   for (let i = 0; i < cookies.length; i++) {
-    let c = cookies[i];
-    while (c.charAt(0) === " ") {
-      c = c.substring(1);
-    }
+    let c = cookies[i].trim(); // Ensure no leading spaces
     if (c.indexOf(name) === 0) {
-      return c.substring(name.length, c.length);
+      return c.substring(name.length, c.length); // Extract refresh token value
     }
   }
   return "";
 };
 
 // Export the functions to make them available to other parts of your app
-export { getAuthToken, setAuthToken, removeAuthToken };
+export { getAuthToken, setAuthToken, removeAuthToken, getRefreshToken };
 
 export default api;
 

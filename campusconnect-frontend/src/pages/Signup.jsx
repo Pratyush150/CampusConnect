@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../services/api';
+import API from '../services/api';  // Ensure API is correctly set up for making API calls
 import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
@@ -15,10 +15,12 @@ const Signup = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Handle form input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Validate form fields
   const validateForm = () => {
     const { name, email, password, college } = formData;
     if (!name || !email || !password || !college) {
@@ -28,20 +30,26 @@ const Signup = () => {
     return true;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
+    // Validate form before submitting
     if (!validateForm()) {
       setLoading(false);
       return;
     }
 
     try {
+      // Send registration request to backend
       const response = await API.post('/auth/register', formData);
+
+      // Check for success response
       if (response.status === 201 || response.status === 200) {
-        navigate('/profile');
+        // Redirect to a page indicating email verification is needed
+        navigate('/verify-email-pending'); // You can replace this with any appropriate page
       } else {
         throw new Error('Registration failed.');
       }
@@ -56,8 +64,11 @@ const Signup = () => {
   return (
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
+
+      {/* Error message display */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
+      {/* Registration form */}
       <form onSubmit={handleSubmit} autoComplete="off">
         {['name', 'email', 'password', 'college'].map((field) => (
           <input
@@ -73,6 +84,7 @@ const Signup = () => {
           />
         ))}
 
+        {/* Submit button */}
         <button
           type="submit"
           disabled={loading}
@@ -86,8 +98,6 @@ const Signup = () => {
 };
 
 export default Signup;
-
-
 
 
 

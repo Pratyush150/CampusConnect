@@ -9,6 +9,7 @@ const VerifyEmail = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  // Function to verify email token
   const verifyEmailToken = async (token) => {
     try {
       const res = await API.get(`/auth/verify-email?token=${token}`);
@@ -21,6 +22,7 @@ const VerifyEmail = () => {
     }
   };
 
+  // Effect hook to get the token from the URL and verify it
   useEffect(() => {
     const token = new URLSearchParams(location.search).get("token");
     if (token) {
@@ -42,3 +44,4 @@ const VerifyEmail = () => {
 };
 
 export default VerifyEmail;
+

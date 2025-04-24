@@ -10,7 +10,7 @@ export const validateEmail = (email) => {
   // Function to validate password
   export const validatePassword = (password) => {
     // Password should be at least 6 characters long, contain at least one uppercase letter, one number, and one special character
-    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-    return regex.test(password); // Ensures at least one uppercase letter, one digit, one special character, and a min length of 6
+    const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+    return regex.test(password); // Ensures at least one uppercase letter, one lowercase letter, one digit, one special character, and a min length of 6
   };
   

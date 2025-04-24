@@ -15,23 +15,27 @@ import CollegeProfile from './pages/CollegeProfile';
 const AppWithAuthCheck = () => {
   const { user, setUser } = useAuth();
 
+  // Check authentication state when the app loads
   useEffect(() => {
-    if (isAuthenticated()) {
-      setUser(getAuthToken());  // Set authenticated user info from token
-    } else {
-      setUser(null);  // Clear user info if not authenticated
-    }
+    const checkAuth = async () => {
+      if (await isAuthenticated()) {
+        setUser(getAuthToken()); // Set user info if authenticated
+      } else {
+        setUser(null); // Clear user info if not authenticated
+      }
+    };
+    checkAuth();
   }, [setUser]);
 
   return (
     <div className="App">
       <Navbar />
       <Routes>
-        {/* Redirect based on authentication state */}
+        {/* Redirect to dashboard if authenticated, otherwise login page */}
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        {/* Protected routes with PrivateRoute wrapper */}
+        {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><CollegeProfile /></PrivateRoute>} />
       </Routes>
@@ -39,7 +43,7 @@ const AppWithAuthCheck = () => {
   );
 };
 
-// Main App component wrapped with AuthProvider to provide authentication context
+// Main App component wrapped with AuthProvider for global authentication state
 const App = () => (
   <AuthProvider>
     <Router>
@@ -49,7 +53,6 @@ const App = () => (
 );
 
 export default App;
-
 
 
 
