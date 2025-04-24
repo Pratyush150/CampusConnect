@@ -5,6 +5,7 @@ import {
   loginUser,
   verifyEmail,
   verifyOTP, // OTP verification route
+  resendOTP, // Resend OTP route
   refreshAccessToken,
   resendVerificationEmail,
   logoutUser,
@@ -28,6 +29,10 @@ router.get("/verify-email", verifyEmail);
 // @desc    Verify OTP
 router.get("/verify-otp", verifyOTP); // OTP verification route
 
+// @route   POST /api/auth/resend-otp
+// @desc    Resend OTP for email verification
+router.post("/resend-otp", authLimiter, resendOTP); // Resend OTP route
+
 // @route   POST /api/auth/refresh-token
 // @desc    Get new access token using refresh token
 router.post("/refresh-token", refreshAccessToken);
@@ -41,6 +46,7 @@ router.post("/resend-verification", authLimiter, resendVerificationEmail);
 router.post("/logout", logoutUser);
 
 export default router;
+
 
 
 

@@ -1,14 +1,24 @@
-// src/pages/VerifyOTP.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import API from "../services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const VerifyOTP = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Extract OTP from the URL query parameters
+  const queryParams = new URLSearchParams(location.search);
+  const otpFromUrl = queryParams.get("otp");
+
+  useEffect(() => {
+    if (otpFromUrl) {
+      setOtp(otpFromUrl);  // Pre-populate OTP from URL if available
+    }
+  }, [otpFromUrl]);
 
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
@@ -33,6 +43,15 @@ const VerifyOTP = () => {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      const res = await API.post("/auth/resend-otp", { email: "user-email@example.com" }); // Replace with real user email
+      setMessage(res.data.message); // Success message after OTP resend
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend OTP.");
     }
   };
 
@@ -68,7 +87,13 @@ const VerifyOTP = () => {
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Didn't receive an OTP? 
-          <a href="#" className="text-blue-600 hover:text-blue-700">Resend OTP</a>
+          <a
+            href="#"
+            className="text-blue-600 hover:text-blue-700"
+            onClick={handleResendOTP}
+          >
+            Resend OTP
+          </a>
         </p>
       </div>
     </div>

@@ -5,7 +5,7 @@ import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/sendEmail.js";
 import verificationTemplate from "../utils/emailTemplates/verificationEmail.js";
 import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js";
-import { generateOTP, validateOTP } from "../utils/otpUtils.js"; // Import OTP functions
+import { generateOTP } from "../utils/otpUtils.js"; // Import OTP function
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -82,6 +82,38 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   });
 
   return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+});
+
+// RESEND OTP
+export const resendOTP = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const normalizedEmail = email.toLowerCase();
+
+  // Find the user by email
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  // Generate a new OTP
+  const otp = generateOTP();
+
+  // Store the new OTP and set expiration time
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { otp, otpExpiration: new Date(Date.now() + 10 * 60 * 1000) },
+  });
+
+  // Generate OTP URL
+  const otpUrl = `${process.env.CLIENT_URL}/verify-otp?otp=${otp}`;
+
+  // Send OTP email
+  await sendEmail({
+    to: normalizedEmail,
+    subject: "New OTP for CampusConnect Account Verification",
+    html: `<p>Your new OTP is: <strong>${otp}</strong></p><p><a href="${otpUrl}">Verify OTP here</a></p>`,
+    text: `Your new OTP is: ${otp}. Verify your email here: ${otpUrl}`,
+  });
+
+  res.status(200).json({ message: "OTP resent successfully." });
 });
 
 // VERIFY EMAIL
@@ -252,4 +284,3 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Password reset successful" });
 });
-
