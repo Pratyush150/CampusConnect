@@ -33,7 +33,8 @@ const VerifyOTP = () => {
     }
 
     try {
-      const res = await API.post("/auth/verify-otp", { otp });
+      // Send OTP to backend for verification using GET method
+      const res = await API.get(`/auth/verify-otp?otp=${otp}`);
       setMessage(res.data.message); // Success message from backend
 
       // Redirect to login page after OTP verification
