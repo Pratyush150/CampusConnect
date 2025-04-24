@@ -61,8 +61,8 @@ const server = http.createServer(app);
 // Middleware Setup
 app.use(cookieParser());
 const allowedOrigins = [
-  "http://localhost:5173",
-  "https://zingy-licorice-136dfc.netlify.app",
+  "http://localhost:5173",   // Local development frontend
+  "https://zingy-licorice-136dfc.netlify.app",  // Production frontend (Netlify URL)
 ];
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
@@ -213,7 +213,7 @@ app.post("/api/chat/save", async (req, res) => {
       create: {
         id: roomId,
         participants: {
-          connect: [{ id: senderId }, { id: receiverId }],
+          connect: [{ id: senderId }, { id: receiverId }], // Connect participants
         },
       },
     });
