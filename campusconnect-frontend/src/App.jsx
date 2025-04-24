@@ -8,7 +8,8 @@ import { isAuthenticated, getAuthToken } from './utils/auth';
 
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import VerifyEmail from './pages/VerifyEmail';
+import VerifyEmail from './components/VerifyEmail';
+
 import CollegeDashboard from './pages/CollegeDashboard';
 import CollegeProfile from './pages/CollegeProfile';
 
