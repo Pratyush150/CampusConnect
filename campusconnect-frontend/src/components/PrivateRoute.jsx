@@ -1,4 +1,3 @@
-// src/components/PrivateRoute.jsx
 import { Navigate } from 'react-router-dom'; // Use Navigate for redirection in v6
 import { isAuthenticated } from '../utils/auth'; // Authentication helper
 

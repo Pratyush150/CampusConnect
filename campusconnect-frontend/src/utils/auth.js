@@ -1,6 +1,5 @@
-import * as jwtDecode from 'jwt-decode';  // Correct import
- // For decoding JWT tokens
-import API from '../services/api';  // For calling your API to refresh the token
+import * as jwtDecode from 'jwt-decode';  // For decoding JWT tokens
+import API from '../services/api';  // API service to refresh the token
 
 // Store token in localStorage
 export const setAuthToken = (token) => {

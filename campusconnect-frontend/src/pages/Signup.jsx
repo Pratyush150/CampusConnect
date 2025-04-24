@@ -2,6 +2,18 @@ import React, { useState } from 'react';
 import API from '../services/api';  // Ensure API is correctly set up for making API calls
 import { useNavigate } from 'react-router-dom';
 
+// Email validation function
+const validateEmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email);
+};
+
+// Password validation function (minimum 6 characters, at least one number, and one special character)
+const validatePassword = (password) => {
+  const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+  return regex.test(password);
+};
+
 const Signup = () => {
   const navigate = useNavigate();
 
@@ -23,10 +35,25 @@ const Signup = () => {
   // Validate form fields
   const validateForm = () => {
     const { name, email, password, college } = formData;
+
+    // Check if any field is empty
     if (!name || !email || !password || !college) {
       setError('Please fill all required fields.');
       return false;
     }
+
+    // Validate email format
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return false;
+    }
+
+    // Validate password format
+    if (!validatePassword(password)) {
+      setError('Password must be at least 6 characters long, contain at least one uppercase letter, one number, and one special character.');
+      return false;
+    }
+
     return true;
   };
 

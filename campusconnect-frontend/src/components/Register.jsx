@@ -30,7 +30,7 @@ const Register = () => {
       setMessage(res.data.message); // Success message from backend
 
       // Redirect to OTP verification page after successful registration
-      setTimeout(() => navigate("/verify-otp"), 5000); // Redirect after 5 seconds
+      setTimeout(() => navigate("/verify-otp"), 3000); // Redirect after 3 seconds
     } catch (err) {
       // Error handling, make sure to display proper error message from backend
       setError(err.response?.data?.message || "Failed to register. Please try again.");
@@ -95,3 +95,4 @@ const Register = () => {
 };
 
 export default Register;
+

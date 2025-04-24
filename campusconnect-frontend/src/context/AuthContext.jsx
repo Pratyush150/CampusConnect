@@ -8,6 +8,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null); // This will hold the logged-in user's info
   const [loading, setLoading] = useState(true); // For loading state before auth check
+  const [error, setError] = useState(null); // For handling errors during auth check
 
   useEffect(() => {
     const token = getAuthToken(); // Check if the user has a token
@@ -22,11 +23,13 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           console.error('Failed to fetch user data:', error);
           setUser(null); // Clear user on error (e.g., invalid token)
+          setError('Failed to authenticate. Please log in again.');
         }
       };
       fetchUser();
     } else {
       setUser(null); // No token, set user as null
+      setError('No authentication token found.');
     }
     setLoading(false); // Update loading state once auth is checked
   }, []);
@@ -44,12 +47,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, loading }}>
-      {children} {/* Makes auth context available to all children */}
+    <AuthContext.Provider value={{ user, setUser, login, logout, loading, error }}>
+      {loading ? (
+        <div className="loading-spinner">
+          {/* Add loading spinner component or message */}
+          Loading...
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };
 
 // Custom hook to access auth context
 export const useAuth = () => useContext(AuthContext);
-

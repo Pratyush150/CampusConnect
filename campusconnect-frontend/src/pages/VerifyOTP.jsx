@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import API from "../services/api";
 import { useNavigate, useLocation } from "react-router-dom";
+import API from "../services/api";
 
 const VerifyOTP = () => {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ const VerifyOTP = () => {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Extract OTP from the URL query parameters
+  // Retrieve the OTP from the URL query parameters
   const queryParams = new URLSearchParams(location.search);
   const otpFromUrl = queryParams.get("otp");
 
@@ -33,7 +33,6 @@ const VerifyOTP = () => {
     }
 
     try {
-      // Send OTP to backend for verification
       const res = await API.post("/auth/verify-otp", { otp });
       setMessage(res.data.message); // Success message from backend
 
@@ -47,8 +46,14 @@ const VerifyOTP = () => {
   };
 
   const handleResendOTP = async () => {
+    const email = localStorage.getItem("userEmail");  // Assuming you stored the email during registration
+    if (!email) {
+      setError("User email not found.");
+      return;
+    }
+
     try {
-      const res = await API.post("/auth/resend-otp", { email: "user-email@example.com" }); // Replace with real user email
+      const res = await API.post("/auth/resend-otp", { email });
       setMessage(res.data.message); // Success message after OTP resend
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend OTP.");
@@ -101,3 +106,4 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+

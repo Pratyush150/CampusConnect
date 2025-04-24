@@ -17,7 +17,7 @@ export const registerUser = async (req, res) => {
   }
 
   if (!validatePassword(password)) {
-    return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    return res.status(400).json({ message: 'Password must be at least 6 characters long, and include uppercase, lowercase, digits, and special characters.' });
   }
 
   try {
@@ -108,10 +108,13 @@ export const getMe = async (req, res) => {
   }
 };
 
+// ---------------------------
 // Update User Profile
+// ---------------------------
 export const updateUserProfile = async (req, res) => {
   const { name, college, bio, avatar, interests } = req.body;
 
+  // Basic validation for required fields
   if (!name || !college || !bio || !interests) {
     return res.status(400).json({ message: "All fields are required" });
   }
@@ -119,13 +122,14 @@ export const updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id; // Extracted by middleware from JWT
 
+    // Update user profile in database
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         name,
         college,
         bio,
-        avatar,
+        avatar,   // Ensure avatar handling is done properly
         interests,
       },
     });

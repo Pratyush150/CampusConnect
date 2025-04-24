@@ -41,8 +41,8 @@ export const protect = async (req, res, next) => {
 
     // 6. Attach user to request for further use
     req.user = user;
-    
-    // 7. Handle token expiration or manipulation (using try/catch)
+
+    // 7. Handle token expiration or manipulation
     if (decoded.exp < Date.now() / 1000) {
       return res.status(401).json({ message: "Token expired. Please log in again." });
     }
@@ -50,9 +50,8 @@ export const protect = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("Protect middleware error:", err.message);
-    
+
     // 8. Token verification failure
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
-

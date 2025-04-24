@@ -19,10 +19,16 @@ const AppWithAuthCheck = () => {
   // Check authentication state when the app loads
   useEffect(() => {
     const checkAuth = async () => {
-      if (await isAuthenticated()) {
-        setUser(getAuthToken()); // Set user info if authenticated
-      } else {
-        setUser(null); // Clear user info if not authenticated
+      try {
+        const authenticated = await isAuthenticated();
+        if (authenticated) {
+          setUser(getAuthToken()); // Set user info if authenticated
+        } else {
+          setUser(null); // Clear user info if not authenticated
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setUser(null); // Clear user info in case of error (e.g., invalid token)
       }
     };
     checkAuth();

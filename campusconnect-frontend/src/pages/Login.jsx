@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
-import ResendVerification from "../components/ResendVerification"; // Adjust path if moved
+import ResendVerification from "../components/ResendVerification"; // Ensure correct path
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,10 +12,9 @@ const Login = () => {
   const [showResend, setShowResend] = useState(false);
 
   useEffect(() => {
-    // Check for valid tokens and handle logout if needed
     const token = localStorage.getItem("token");
     if (token) {
-      navigate("/profile"); // Automatically navigate to profile if already logged in
+      navigate("/profile"); // Redirect if already logged in
     }
   }, [navigate]);
 
@@ -39,16 +38,18 @@ const Login = () => {
 
     try {
       const res = await API.post("/auth/login", { email, password });
+
       // Store access token in local storage and refresh token in cookies
       localStorage.setItem("token", res.data.token);
       document.cookie = `refreshToken=${res.data.refreshToken}; path=/; Secure; HttpOnly`;
-      navigate("/profile");
+
+      navigate("/profile"); // Redirect to profile after login
     } catch (err) {
       const message = err.response?.data?.message || "Invalid credentials, please try again.";
       setError(message);
 
       if (message.toLowerCase().includes("verify your email")) {
-        setShowResend(true);
+        setShowResend(true); // Show Resend Verification if not verified
       }
     } finally {
       setLoading(false);
@@ -59,6 +60,7 @@ const Login = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
 
+      {/* Display error message if exists */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleLogin} autoComplete="off">
@@ -81,7 +83,11 @@ const Login = () => {
           disabled={loading}
           className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
         >
-          {loading ? "Logging in..." : "Log In"}
+          {loading ? (
+            <div className="spinner-border animate-spin h-5 w-5 border-t-2 border-b-2 border-white"></div>
+          ) : (
+            "Log In"
+          )}
         </button>
       </form>
 
@@ -90,7 +96,7 @@ const Login = () => {
           <p className="text-sm text-center text-gray-600 mb-2">
             Didn’t receive a verification email?
           </p>
-          <ResendVerification />
+          <ResendVerification email={email} /> {/* Pass email if required for ResendVerification */}
         </div>
       )}
     </div>

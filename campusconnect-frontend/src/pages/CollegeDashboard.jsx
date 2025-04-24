@@ -26,12 +26,13 @@ const CollegeDashboard = () => {
   const [eventFilter, setEventFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
   const [chatbotOpen, setChatbotOpen] = useState(false);
-  const [loading, setLoading] = useState(true); // Loading state for fetching data
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(""); // Error state for fetching data
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true); // Start loading
+        setLoading(true);
         const [postRes, resRes, eventRes, mentorRes] = await Promise.all([
           api.get("/posts"),
           api.get("/resources"),
@@ -44,15 +45,16 @@ const CollegeDashboard = () => {
         setMentors(mentorRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError("Failed to fetch data. Please try again.");
       } finally {
-        setLoading(false); // End loading
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Memoize filtered resources and events to prevent unnecessary recalculations
+  // Memoize filtered resources and events
   const filteredResources = useMemo(() => {
     return resources.filter((res) => {
       const matchesSearch =
@@ -82,12 +84,12 @@ const CollegeDashboard = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-950 text-white">
-        {/* Sidebar */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-
-        {/* Main Content */}
         <div className="flex-grow pt-28 px-4 sm:px-6 pb-24">
           <p className="text-center text-xl text-gray-400">Loading...</p>
+          <div className="flex justify-center items-center mt-5">
+            <div className="spinner-border animate-spin h-8 w-8 border-t-2 border-white"></div>
+          </div>
         </div>
       </div>
     );
@@ -95,11 +97,11 @@ const CollegeDashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-950 text-white relative overflow-hidden">
-      {/* Sidebar */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* Main Content */}
       <div className="flex-grow overflow-y-auto max-w-7xl mx-auto pt-28 px-4 sm:px-6 pb-24 custom-scroll">
+        {error && <p className="text-red-500 text-center">{error}</p>}
+
         {activeTab === "feed" && (
           <div className="space-y-10">
             <ServicesExchange />

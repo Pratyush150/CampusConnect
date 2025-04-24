@@ -1,5 +1,5 @@
 const verificationEmail = ({ name, verificationUrl }) => {
-    return `
+  return `
     <!DOCTYPE html>
     <html lang="en">
       <head>
@@ -20,8 +20,7 @@ const verificationEmail = ({ name, verificationUrl }) => {
         </div>
       </body>
     </html>
-    `;
-  };
-  
-  export default verificationEmail;
-  
+  `;
+};
+
+export default verificationEmail;
