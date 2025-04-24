@@ -5,7 +5,7 @@ import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/sendEmail.js";
 import verificationTemplate from "../utils/emailTemplates/verificationEmail.js";
 import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js";
-import { generateOTP, validateOTP } from "../utils/otpUtils.js"; // New utility file for OTP handling
+import { generateOTP, validateOTP } from "../utils/otpUtils.js"; // Import OTP functions
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -44,6 +44,7 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   const otpUrl = `${process.env.CLIENT_URL}/verify-otp?otp=${otp}`;
 
+  // Send OTP email
   await sendEmail({
     to: normalizedEmail,
     subject: "Verify your CampusConnect Account with OTP",
@@ -82,9 +83,6 @@ export const verifyOTP = asyncHandler(async (req, res) => {
 
   return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
 });
-
-// LOGIN, REFRESH TOKEN, LOGOUT, AND OTHER FUNCTIONS...
-
 
 // LOGIN
 export const loginUser = asyncHandler(async (req, res) => {
@@ -136,7 +134,6 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
   const newAccessToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "1h");
 
-  // Re-set the same refresh token to extend cookie expiry
   res.cookie("refreshToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -190,7 +187,7 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
   await sendEmail({
     to: normalizedEmail,
     subject: "Resend Verification - CampusConnect",
-    html: verificationTemplate(user.name, verificationUrl), // Correctly passing name
+    html: verificationTemplate(user.name, verificationUrl),
     text: `Verify your email here: ${verificationUrl}`,
   });
 

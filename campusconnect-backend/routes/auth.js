@@ -4,7 +4,7 @@ import {
   registerUser,
   loginUser,
   verifyEmail,
-  verifyOTP, // New route for OTP verification
+  verifyOTP, // OTP verification route
   refreshAccessToken,
   resendVerificationEmail,
   logoutUser,
@@ -25,8 +25,8 @@ router.post("/login", authLimiter, loginUser);
 router.get("/verify-email", verifyEmail);
 
 // @route   GET /api/auth/verify-otp?otp=
-// @desc    Verify email using OTP
-router.get("/verify-otp", verifyOTP); // New route for OTP verification
+// @desc    Verify OTP
+router.get("/verify-otp", verifyOTP); // OTP verification route
 
 // @route   POST /api/auth/refresh-token
 // @desc    Get new access token using refresh token

@@ -1,11 +1,13 @@
-// OTP Generation utility
+// utils/otpUtils.js
+
+// Generate a 6-digit OTP
 export const generateOTP = () => {
-    const otp = Math.floor(100000 + Math.random() * 900000); // Generates a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000);
     return otp.toString();
   };
   
-  // OTP Validation utility (optional if needed)
-  export const validateOTP = (otp) => {
-    return /^\d{6}$/.test(otp); // Ensures OTP is exactly 6 digits
+  // Optional: Add OTP validation logic (in case it's needed later)
+  export const validateOTP = (inputOtp, storedOtp) => {
+    return inputOtp === storedOtp;
   };
   
