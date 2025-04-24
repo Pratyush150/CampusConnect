@@ -39,10 +39,12 @@ export const registerUser = asyncHandler(async (req, res) => {
   });
 
   const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+  
+  // Ensure name is passed correctly to the email template
   await sendEmail({
     to: normalizedEmail,
     subject: "Verify your CampusConnect Account",
-    html: verificationTemplate(name, verificationUrl),
+    html: verificationTemplate(newUser.name, verificationUrl), // Correctly passing name
     text: `Verify your email here: ${verificationUrl}`,
   });
 
@@ -58,18 +60,22 @@ export const registerUser = asyncHandler(async (req, res) => {
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.query;
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
 
-  if (!user) return res.status(404).json({ message: "User not found" });
-  if (user.isVerified) return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.isVerified) return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { isVerified: true, verificationToken: null },
-  });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, verificationToken: null },
+    });
 
-  return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+    return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to verify email" });
+  }
 });
 
 // LOGIN
@@ -176,7 +182,7 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
   await sendEmail({
     to: normalizedEmail,
     subject: "Resend Verification - CampusConnect",
-    html: verificationTemplate(user.name, verificationUrl),
+    html: verificationTemplate(user.name, verificationUrl), // Correctly passing name
     text: `Verify your email here: ${verificationUrl}`,
   });
 

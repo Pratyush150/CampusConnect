@@ -68,6 +68,9 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
 
+// Trust Proxy Setting (for express-rate-limit behind proxies)
+app.set('trust proxy', 1); // This allows express-rate-limit to work correctly behind proxies
+
 // Socket.IO Setup
 const io = new Server(server, {
   cors: {
