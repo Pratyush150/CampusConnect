@@ -9,15 +9,19 @@ import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
-const generateToken = (payload, secret, expiresIn) => jwt.sign(payload, secret, { expiresIn });
+const generateToken = (payload, secret, expiresIn) =>
+  jwt.sign(payload, secret, { expiresIn });
 
 // REGISTER
 export const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, college } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existingUser) return res.status(400).json({ message: "User already exists" });
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+  if (existingUser)
+    return res.status(400).json({ message: "User already exists" });
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const newUser = await prisma.user.create({
@@ -31,7 +35,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     },
   });
 
-  const verificationToken = generateToken({ userId: newUser.id }, process.env.JWT_SECRET, "15m");
+  const verificationToken = generateToken(
+    { userId: newUser.id },
+    process.env.JWT_SECRET,
+    "15m"
+  );
 
   await prisma.user.update({
     where: { id: newUser.id },
@@ -58,18 +66,24 @@ export const registerUser = asyncHandler(async (req, res) => {
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.query;
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
 
-  if (!user) return res.status(404).json({ message: "User not found" });
-  if (user.isVerified) return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.isVerified)
+      return res.redirect(`${process.env.CLIENT_URL}/login?verified=already`);
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { isVerified: true, verificationToken: null },
-  });
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { isVerified: true, verificationToken: null },
+    });
 
-  return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+    return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+  } catch (err) {
+    console.error("Verification Error:", err);
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
 });
 
 // LOGIN
@@ -79,13 +93,18 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: "User not found" });
-  if (!user.isVerified) return res.status(401).json({ message: "Please verify your email first." });
+  if (!user.isVerified)
+    return res.status(401).json({ message: "Please verify your email first." });
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
   const accessToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "1h");
-  const refreshToken = generateToken({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET, "7d");
+  const refreshToken = generateToken(
+    { userId: user.id },
+    process.env.REFRESH_TOKEN_SECRET,
+    "7d"
+  );
 
   await prisma.user.update({
     where: { id: user.id },
@@ -136,3 +155,4 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "Verification email resent successfully." });
 });
+
