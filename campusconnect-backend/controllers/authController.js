@@ -23,7 +23,9 @@ export const registerUser = asyncHandler(async (req, res) => {
   const normalizedEmail = email.toLowerCase();
 
   const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existingUser) return res.status(400).json({ message: "User already exists" });
+  if (existingUser) {
+    return res.status(400).json({ message: "User already exists" });
+  }
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
   const newUser = await prisma.user.create({
@@ -95,7 +97,6 @@ export const resendOTP = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const normalizedEmail = email.toLowerCase();
 
-  // Find the user by email
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: "User not found" });
 

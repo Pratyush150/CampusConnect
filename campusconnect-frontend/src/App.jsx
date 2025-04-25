@@ -8,7 +8,7 @@ import { isAuthenticated, getAuthToken } from "./utils/auth";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import VerifyOTP from "./pages/VerifyOTP";  // Added OTP page for verification
+import VerifyOTP from "./pages/VerifyOTP";  // OTP verification page
 
 import CollegeDashboard from "./pages/CollegeDashboard";
 import CollegeProfile from "./pages/CollegeProfile";

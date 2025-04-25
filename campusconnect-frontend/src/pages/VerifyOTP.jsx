@@ -38,6 +38,9 @@ const VerifyOTP = () => {
       const res = await API.get(`/auth/verify-otp?otp=${otp}`);
       setMessage(res.data.message); // Success message from backend
 
+      // Clear OTP field after successful verification
+      setOtp('');
+
       // Redirect to login page after OTP verification
       setTimeout(() => navigate("/login"), 5000); // Redirect after 5 seconds
     } catch (err) {
@@ -113,5 +116,6 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+
 
 

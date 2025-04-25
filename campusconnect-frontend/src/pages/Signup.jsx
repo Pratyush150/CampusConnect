@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import API from '../services/api';  // Ensure API is correctly set up for making API calls
+import API from '../services/api';  
 import { useNavigate } from 'react-router-dom';
 
 // Email validation function
@@ -8,7 +8,7 @@ const validateEmail = (email) => {
   return regex.test(email);
 };
 
-// Password validation function (minimum 6 characters, at least one number, and one special character)
+// Password validation function
 const validatePassword = (password) => {
   const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
   return regex.test(password);
@@ -16,12 +16,14 @@ const validatePassword = (password) => {
 
 const Signup = () => {
   const navigate = useNavigate();
-
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
+    confirmPassword: '',
+    role: '',
     college: '',
+    linkedin: '', // For mentors
   });
 
   const [error, setError] = useState('');
@@ -34,11 +36,17 @@ const Signup = () => {
 
   // Validate form fields
   const validateForm = () => {
-    const { name, email, password, college } = formData;
+    const { name, email, password, confirmPassword, role, college, linkedin } = formData;
 
     // Check if any field is empty
-    if (!name || !email || !password || !college) {
+    if (!name || !email || !password || !confirmPassword || !role) {
       setError('Please fill all required fields.');
+      return false;
+    }
+
+    // Check if password and confirmPassword match
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
       return false;
     }
 
@@ -73,10 +81,9 @@ const Signup = () => {
       // Send registration request to backend
       const response = await API.post('/auth/register', formData);
 
-      // Check for success response
       if (response.status === 201 || response.status === 200) {
-        // Redirect to a page indicating email verification is needed
-        navigate('/verify-email-pending'); // You can replace this with any appropriate page
+        // Redirect to OTP verification page after successful signup
+        navigate(`/verify-otp?email=${formData.email}`);  // Pass email in URL for OTP verification
       } else {
         throw new Error('Registration failed.');
       }
@@ -97,11 +104,11 @@ const Signup = () => {
 
       {/* Registration form */}
       <form onSubmit={handleSubmit} autoComplete="off">
-        {['name', 'email', 'password', 'college'].map((field) => (
+        {['name', 'email', 'password', 'confirmPassword', 'role', 'college', 'linkedin'].map((field) => (
           <input
             key={field}
             id={field}
-            type={field === 'password' ? 'password' : field === 'email' ? 'email' : 'text'}
+            type={field === 'password' || field === 'confirmPassword' ? 'password' : field === 'email' ? 'email' : 'text'}
             name={field}
             value={formData[field]}
             placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
@@ -125,6 +132,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
 
 
 
