@@ -10,6 +10,10 @@ import { generateOTP } from "../utils/otpUtils.js"; // Import OTP function
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
+// Load the JWT secrets from environment variables or fallback to a default
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'fallback-refresh-secret-key';
+
 // Function to generate JWT token
 const generateToken = (payload, secret, expiresIn) => jwt.sign(payload, secret, { expiresIn });
 
@@ -86,7 +90,6 @@ export const verifyOTP = asyncHandler(async (req, res) => {
   return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
 });
 
-
 // RESEND OTP
 export const resendOTP = asyncHandler(async (req, res) => {
   const { email } = req.body;
@@ -124,7 +127,7 @@ export const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.query;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
 
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -155,8 +158,8 @@ export const loginUser = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-  const accessToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "1h");
-  const refreshToken = generateToken({ userId: user.id }, process.env.REFRESH_TOKEN_SECRET, "7d");
+  const accessToken = generateToken({ userId: user.id }, JWT_SECRET, "1h");
+  const refreshToken = generateToken({ userId: user.id }, REFRESH_TOKEN_SECRET, "7d");
 
   await prisma.user.update({
     where: { id: user.id },
@@ -180,19 +183,18 @@ export const loginUser = asyncHandler(async (req, res) => {
   });
 });
 
-
 // REFRESH ACCESS TOKEN
 export const refreshAccessToken = asyncHandler(async (req, res) => {
   const token = req.cookies?.refreshToken;
   if (!token) return res.status(401).json({ message: "No refresh token provided" });
 
-  const decoded = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+  const decoded = jwt.verify(token, REFRESH_TOKEN_SECRET);
   const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
 
   if (!user || user.refreshToken !== token)
     return res.status(403).json({ message: "Invalid refresh token" });
 
-  const newAccessToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "1h");
+  const newAccessToken = generateToken({ userId: user.id }, JWT_SECRET, "1h");
 
   res.cookie("refreshToken", token, {
     httpOnly: true,
@@ -235,7 +237,7 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
   if (!user) return res.status(404).json({ message: "User not found" });
   if (user.isVerified) return res.status(400).json({ message: "Email is already verified" });
 
-  const verificationToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "15m");
+  const verificationToken = generateToken({ userId: user.id }, JWT_SECRET, "15m");
 
   await prisma.user.update({
     where: { id: user.id },
@@ -262,7 +264,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  const resetToken = generateToken({ userId: user.id }, process.env.JWT_SECRET, "15m");
+  const resetToken = generateToken({ userId: user.id }, JWT_SECRET, "15m");
   const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
   await sendEmail({
@@ -280,7 +282,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
   const { token } = req.query;
   const { newPassword } = req.body;
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, JWT_SECRET);
   const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
   await prisma.user.update({
