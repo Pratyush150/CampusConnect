@@ -152,7 +152,6 @@ export const loginUser = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  console.log("User found:", user);  // Log user for debugging
   if (!user.isVerified) return res.status(401).json({ message: "Please verify your email first." });
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -163,7 +162,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { refreshToken },
+    data: { refreshToken }, // Store refresh token in user model
   });
 
   res.cookie("refreshToken", refreshToken, {
@@ -173,7 +172,7 @@ export const loginUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
   });
 
-  const { password: _, refreshToken: __, verificationToken: ___, ...userSafe } = user;
+  const { password: _, verificationToken: __, ...userSafe } = user;
 
   res.status(200).json({
     message: "Login successful",

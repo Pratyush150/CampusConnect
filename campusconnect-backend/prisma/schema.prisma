@@ -38,6 +38,7 @@ model User {
   otpExpiration     DateTime? // New field for OTP expiration time
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  refreshToken      String?  // Add this field to store the refreshToken
 
   posts                Post[] 
   resources            Resource[] 
@@ -162,3 +163,4 @@ model College {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
