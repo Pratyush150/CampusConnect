@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import API from '../services/api';  
+import API from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
-// Email validation function
+// Email validation
 const validateEmail = (email) => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   return regex.test(email);
 };
 
-// Password validation function
+// Password validation
 const validatePassword = (password) => {
   const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
   return regex.test(password);
@@ -16,20 +16,22 @@ const validatePassword = (password) => {
 
 const Signup = () => {
   const navigate = useNavigate();
+
+  // Form state
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: '',
+    role: '', // blank initially
     college: '',
-    linkedin: '', // For mentors
+    linkedin: '',
   });
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle form input changes
+  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -38,57 +40,59 @@ const Signup = () => {
   const validateForm = () => {
     const { name, email, password, confirmPassword, role, college, linkedin } = formData;
 
-    // Check if any field is empty
     if (!name || !email || !password || !confirmPassword || !role) {
       setError('Please fill all required fields.');
       return false;
     }
 
-    // Check if password and confirmPassword match
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return false;
     }
 
-    // Validate email format
     if (!validateEmail(email)) {
       setError('Please enter a valid email address.');
       return false;
     }
 
-    // Validate password format
     if (!validatePassword(password)) {
-      setError('Password must be at least 6 characters long, contain at least one uppercase letter, one number, and one special character.');
+      setError('Password must be at least 6 characters long, contain an uppercase letter, one number, and a special character.');
+      return false;
+    }
+
+    if (role === 'student' && !college) {
+      setError('College name is required for students.');
+      return false;
+    }
+
+    if (role === 'mentor' && !linkedin) {
+      setError('LinkedIn profile is required for mentors.');
       return false;
     }
 
     return true;
   };
 
-  // Handle form submission
+  // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Validate form before submitting
     if (!validateForm()) {
       setLoading(false);
       return;
     }
 
     try {
-      // Send registration request to backend
       const response = await API.post('/auth/register', formData);
 
       if (response.status === 201 || response.status === 200) {
-        // Redirect to OTP verification page after successful signup
-        navigate(`/verify-otp?email=${formData.email}`);  // Pass email in URL for OTP verification
+        navigate(`/verify-otp?email=${formData.email}`);
       } else {
         throw new Error('Registration failed.');
       }
     } catch (err) {
-      console.error(err);
       setError(err.response?.data?.message || err.message || 'An error occurred during sign-up.');
     } finally {
       setLoading(false);
@@ -99,26 +103,85 @@ const Signup = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
 
-      {/* Error message display */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-      {/* Registration form */}
       <form onSubmit={handleSubmit} autoComplete="off">
-        {['name', 'email', 'password', 'confirmPassword', 'role', 'college', 'linkedin'].map((field) => (
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          placeholder="Name"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          placeholder="Email Address"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          placeholder="Password"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          type="password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          placeholder="Confirm Password"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
+
+        {/* Dropdown Role Selector */}
+        <select
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          required
+        >
+          <option value="" disabled>Select Role</option>
+          <option value="student">Student</option>
+          <option value="mentor">Mentor</option>
+        </select>
+
+        {/* Conditionally render based on role */}
+        {formData.role === 'student' && (
           <input
-            key={field}
-            id={field}
-            type={field === 'password' || field === 'confirmPassword' ? 'password' : field === 'email' ? 'email' : 'text'}
-            name={field}
-            value={formData[field]}
-            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
+            type="text"
+            name="college"
+            value={formData.college}
+            placeholder="College Name"
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
-            required
           />
-        ))}
+        )}
 
-        {/* Submit button */}
+        {formData.role === 'mentor' && (
+          <input
+            type="text"
+            name="linkedin"
+            value={formData.linkedin}
+            placeholder="LinkedIn Profile"
+            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            onChange={handleChange}
+          />
+        )}
+
         <button
           type="submit"
           disabled={loading}
@@ -132,7 +195,6 @@ const Signup = () => {
 };
 
 export default Signup;
-
 
 
 
