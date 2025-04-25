@@ -5,22 +5,44 @@ import API from "../services/api";
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resendLoading, setResendLoading] = useState(false); // For disabling resend button during request
+  const [resendLoading, setResendLoading] = useState(false);
 
-  // Retrieve the OTP from the URL query parameters
+  // Get the 'otp' value from URL query param
   const queryParams = new URLSearchParams(location.search);
   const otpFromUrl = queryParams.get("otp");
 
   useEffect(() => {
     if (otpFromUrl) {
-      setOtp(otpFromUrl);  // Pre-populate OTP from URL if available
+      setOtp(otpFromUrl);
+      autoVerifyOtp(otpFromUrl); // 🆕 Trigger auto-verification if OTP is in URL
     }
   }, [otpFromUrl]);
 
+  // 🆕 Automatically verify OTP from URL
+  const autoVerifyOtp = async (autoOtp) => {
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await API.get(`/auth/verify-otp?otp=${autoOtp}`);
+      setMessage(res.data.message || "OTP verified successfully");
+
+      // Redirect to profile/login after success
+      setTimeout(() => navigate("/login"), 2000); // ✅ Change this to /login if needed
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Manual OTP verification from form
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setError("");
@@ -34,15 +56,11 @@ const VerifyOTP = () => {
     }
 
     try {
-      // Send OTP to backend for verification using GET method
       const res = await API.get(`/auth/verify-otp?otp=${otp}`);
-      setMessage(res.data.message); // Success message from backend
+      setMessage(res.data.message || "OTP verified successfully");
+      setOtp("");
 
-      // Clear OTP field after successful verification
-      setOtp('');
-
-      // Redirect to login page after OTP verification
-      setTimeout(() => navigate("/login"), 5000); // Redirect after 5 seconds
+      setTimeout(() => navigate("/login"), 2000); // ✅ Change this to /login if needed
     } catch (err) {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
     } finally {
@@ -51,21 +69,23 @@ const VerifyOTP = () => {
   };
 
   const handleResendOTP = async () => {
-    const email = localStorage.getItem("userEmail");  // Assuming you stored the email during registration
+    const email = localStorage.getItem("userEmail");
     if (!email) {
       setError("User email not found.");
       return;
     }
 
-    setResendLoading(true);  // Disable resend button while making the request
+    setResendLoading(true);
+    setError("");
+    setMessage("");
 
     try {
       const res = await API.post("/auth/resend-otp", { email });
-      setMessage(res.data.message); // Success message after OTP resend
+      setMessage(res.data.message);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend OTP.");
     } finally {
-      setResendLoading(false);  // Re-enable resend button after request is finished
+      setResendLoading(false);
     }
   };
 
@@ -73,10 +93,7 @@ const VerifyOTP = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Verify OTP</h2>
 
-      {/* Display error message if exists */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-      
-      {/* Display success message if exists */}
       {message && <p className="text-green-600 text-sm mb-4">{message}</p>}
 
       <form onSubmit={handleVerifyOTP} autoComplete="off">
@@ -97,15 +114,14 @@ const VerifyOTP = () => {
         </button>
       </form>
 
-      {/* Link to resend OTP */}
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Didn't receive an OTP? 
+          Didn't receive an OTP?{" "}
           <a
             href="#"
-            className="text-blue-600 hover:text-blue-700"
             onClick={handleResendOTP}
-            disabled={resendLoading}  // Disable resend button while request is being made
+            className="text-blue-600 hover:text-blue-700"
+            disabled={resendLoading}
           >
             {resendLoading ? "Sending..." : "Resend OTP"}
           </a>
@@ -116,6 +132,7 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+
 
 
 
