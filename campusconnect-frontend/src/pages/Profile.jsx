@@ -1,57 +1,90 @@
 import React, { useState } from "react";
 
-// This component will display the user's profile information
+// Profile component displays user's profile information
 const Profile = ({ user, updateUserProfile }) => {
+  // State to track if user is editing profile
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: user.name,
-    bio: user.bio,
-    interests: user.interests,
-    services: user.services,
-  });
-  const [profilePic, setProfilePic] = useState(user.profilePic);
 
+  // State to track form data (editable fields)
+  const [formData, setFormData] = useState({
+    name: user?.name || "",
+    bio: user?.bio || "",
+    interests: user?.interests || [],
+    services: user?.services || [],
+  });
+
+  // State to track profile picture
+  const [profilePic, setProfilePic] = useState(user?.profilePic || "");
+
+  // Toggle between editing and viewing profile
   const handleProfileEdit = () => {
     setIsEditing(!isEditing);
   };
 
+  // Handle file input for changing profile picture
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Logic to upload the image (API call for uploading)
+      // Create file reader to preview image locally
       const reader = new FileReader();
       reader.onloadend = () => setProfilePic(reader.result);
       reader.readAsDataURL(file);
     }
   };
 
+  // Handle input changes for text fields
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // Save the edited profile
   const handleSaveProfile = () => {
-    updateUserProfile(formData); // API call to update profile
-    setIsEditing(false);
+    updateUserProfile({ ...formData, profilePic }); // Pass updated data
+    setIsEditing(false); // Exit editing mode
   };
+
+  // If user data or formData not loaded yet, show loading skeleton
+  if (!user || !formData) {
+    return (
+      <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-xl animate-pulse space-y-4">
+        {/* Skeleton for profile header */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gray-300 dark:bg-gray-700" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
+          </div>
+        </div>
+        {/* Skeleton for profile content */}
+        <div className="space-y-3 mt-6">
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-4/6"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow rounded-xl p-6">
+      {/* Top section: profile picture and name */}
       <div className="flex items-center gap-4">
-        {/* Profile picture */}
         <div className="relative">
+          {/* Display profile picture or fallback */}
           <img
-            src={profilePic || "default-profile-pic.jpg"} // Use default if no profile pic provided
+            src={profilePic || "default-profile-pic.jpg"}
             alt="Profile"
             className="w-20 h-20 rounded-full object-cover"
           />
-          {/* Profile picture change button */}
+          {/* Button to trigger file input */}
           <button
             onClick={() => document.getElementById('profile-pic-input').click()}
             className="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full p-1"
           >
             <i className="fa fa-camera"></i>
           </button>
+          {/* Hidden file input for uploading profile picture */}
           <input
             type="file"
             id="profile-pic-input"
@@ -60,6 +93,8 @@ const Profile = ({ user, updateUserProfile }) => {
             className="hidden"
           />
         </div>
+
+        {/* User name and bio */}
         <div>
           {isEditing ? (
             <input
@@ -67,16 +102,18 @@ const Profile = ({ user, updateUserProfile }) => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="text-2xl font-semibold text-gray-800 dark:text-white"
+              className="text-2xl font-semibold text-gray-800 dark:text-white bg-transparent border-b border-gray-400 focus:outline-none"
             />
           ) : (
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">{user.name}</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">
+              {user.name}
+            </h1>
           )}
           <p className="text-sm text-gray-600 dark:text-gray-300">{user.bio}</p>
         </div>
       </div>
 
-      {/* Edit Profile Button */}
+      {/* Edit or Cancel button */}
       <button
         onClick={handleProfileEdit}
         className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -84,17 +121,20 @@ const Profile = ({ user, updateUserProfile }) => {
         {isEditing ? "Cancel Edit" : "Edit Profile"}
       </button>
 
-      {/* Edit Profile Fields */}
+      {/* Editable fields when editing */}
       {isEditing && (
-        <div className="mt-4">
+        <div className="mt-4 space-y-4">
+          {/* Bio field */}
           <input
             type="text"
             name="bio"
             value={formData.bio}
             onChange={handleInputChange}
-            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            className="w-full p-3 border rounded-lg text-gray-800"
             placeholder="Bio"
           />
+
+          {/* Interests field */}
           <input
             type="text"
             name="interests"
@@ -102,12 +142,14 @@ const Profile = ({ user, updateUserProfile }) => {
             onChange={(e) =>
               setFormData({
                 ...formData,
-                interests: e.target.value.split(","),
+                interests: e.target.value.split(",").map((item) => item.trim()),
               })
             }
-            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            className="w-full p-3 border rounded-lg text-gray-800"
             placeholder="Interests (comma separated)"
           />
+
+          {/* Services field */}
           <input
             type="text"
             name="services"
@@ -115,12 +157,14 @@ const Profile = ({ user, updateUserProfile }) => {
             onChange={(e) =>
               setFormData({
                 ...formData,
-                services: e.target.value.split(","),
+                services: e.target.value.split(",").map((item) => item.trim()),
               })
             }
-            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            className="w-full p-3 border rounded-lg text-gray-800"
             placeholder="Services (comma separated)"
           />
+
+          {/* Save button */}
           <button
             onClick={handleSaveProfile}
             className="w-full p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
@@ -130,11 +174,11 @@ const Profile = ({ user, updateUserProfile }) => {
         </div>
       )}
 
-      {/* Interests */}
-      <div className="mt-4">
+      {/* Interests list */}
+      <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Interests</h2>
-        <ul className="flex gap-2 mt-2">
-          {user.interests.length > 0 ? (
+        <ul className="flex gap-2 mt-2 flex-wrap">
+          {user.interests?.length > 0 ? (
             user.interests.map((interest, index) => (
               <li
                 key={index}
@@ -149,11 +193,11 @@ const Profile = ({ user, updateUserProfile }) => {
         </ul>
       </div>
 
-      {/* Services offered by the user */}
-      <div className="mt-4">
+      {/* Services list */}
+      <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Services</h2>
-        <ul className="flex gap-2 mt-2">
-          {user.services.length > 0 ? (
+        <ul className="flex gap-2 mt-2 flex-wrap">
+          {user.services?.length > 0 ? (
             user.services.map((service, index) => (
               <li
                 key={index}
@@ -168,11 +212,11 @@ const Profile = ({ user, updateUserProfile }) => {
         </ul>
       </div>
 
-      {/* Followers */}
-      <div className="mt-4">
+      {/* Followers section */}
+      <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Followers</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300">{user.followers.length} Followers</p>
-        {/* Option to view followers */}
+        <p className="text-sm text-gray-600 dark:text-gray-300">{user.followers?.length || 0} Followers</p>
+        {/* View followers button (optional to extend) */}
         <button className="text-blue-500 hover:text-blue-700 mt-2">View Followers</button>
       </div>
     </div>
@@ -180,5 +224,4 @@ const Profile = ({ user, updateUserProfile }) => {
 };
 
 export default Profile;
-
 
