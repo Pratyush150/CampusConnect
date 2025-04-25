@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
       // If token exists, fetch user info using the token
       const fetchUser = async () => {
         try {
-          const response = await API.get('/auth/me', {
+          const response = await API.get('/users/me', {
             headers: { Authorization: `Bearer ${token}` }, // Pass token in the headers
           });
           setUser(response.data); // Set user data in state
