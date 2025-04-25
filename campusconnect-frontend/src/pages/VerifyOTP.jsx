@@ -19,22 +19,23 @@ const VerifyOTP = () => {
   useEffect(() => {
     if (otpFromUrl) {
       setOtp(otpFromUrl);
-      autoVerifyOtp(otpFromUrl); // 🆕 Trigger auto-verification if OTP is in URL
+      autoVerifyOtp(otpFromUrl); // Trigger auto-verification if OTP is in URL
     }
   }, [otpFromUrl]);
 
-  // 🆕 Automatically verify OTP from URL
+  // Automatically verify OTP from URL
   const autoVerifyOtp = async (autoOtp) => {
     setLoading(true);
     setError("");
     setMessage("");
 
     try {
+      // Sending OTP to backend for verification (no redirection here)
       const res = await API.get(`/auth/verify-otp?otp=${autoOtp}`);
       setMessage(res.data.message || "OTP verified successfully");
 
-      // Redirect to profile/login after success
-      setTimeout(() => navigate("/login"), 2000); // ✅ Change this to /login if needed
+      // React handles the redirect
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
     } finally {
@@ -60,7 +61,7 @@ const VerifyOTP = () => {
       setMessage(res.data.message || "OTP verified successfully");
       setOtp("");
 
-      setTimeout(() => navigate("/login"), 2000); // ✅ Change this to /login if needed
+      setTimeout(() => navigate("/login"), 2000); // React handles the redirect
     } catch (err) {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
     } finally {
@@ -132,6 +133,7 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+
 
 
 

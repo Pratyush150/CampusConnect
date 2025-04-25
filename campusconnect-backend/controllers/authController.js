@@ -89,7 +89,8 @@ export const verifyOTP = asyncHandler(async (req, res) => {
     data: { isVerified: true, otp: null, otpExpiration: null },
   });
 
-  return res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+  // Send a success response (no redirect)
+  return res.status(200).json({ message: "OTP Verified Successfully" });
 });
 
 // RESEND OTP

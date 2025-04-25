@@ -1,42 +1,43 @@
+// React imports
 import React, { useState } from 'react';
-import API from '../services/api';
-import { useNavigate } from 'react-router-dom';
+import API from '../services/api'; // Axios instance for making API requests
+import { useNavigate } from 'react-router-dom'; // For redirecting after successful signup
 
-// Email validation
+// ✅ Utility: Email validation regex
 const validateEmail = (email) => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return regex.test(email);
+  return regex.test(email); // returns true if valid
 };
 
-// Password validation
+// ✅ Utility: Password validation regex (uppercase, lowercase, digit, special char, min 6 chars)
 const validatePassword = (password) => {
   const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-  return regex.test(password);
+  return regex.test(password); // returns true if password is strong
 };
 
 const Signup = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Used for programmatic navigation
 
-  // Form state
+  // ✅ Form state setup
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: '', // blank initially
-    college: '',
-    linkedin: '',
+    role: '',           // student or mentor
+    college: '',        // required only for student
+    linkedin: '',       // required only for mentor
   });
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');     // to show error message if any
+  const [loading, setLoading] = useState(false); // shows loading text during API call
 
-  // Handle input changes
+  // ✅ Handle input value change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Validate form fields
+  // ✅ Frontend form validation before submission
   const validateForm = () => {
     const { name, email, password, confirmPassword, role, college, linkedin } = formData;
 
@@ -60,6 +61,7 @@ const Signup = () => {
       return false;
     }
 
+    // Conditional fields based on role
     if (role === 'student' && !college) {
       setError('College name is required for students.');
       return false;
@@ -70,32 +72,35 @@ const Signup = () => {
       return false;
     }
 
-    return true;
+    return true; // All validations passed
   };
 
-  // Handle submit
+  // ✅ Handle submit button click
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault();     // prevent page reload
     setError('');
     setLoading(true);
 
     if (!validateForm()) {
-      setLoading(false);
+      setLoading(false);   // stop loading if validation fails
       return;
     }
 
     try {
+      // 👇 Send POST request to backend API for registration
       const response = await API.post('/auth/register', formData);
 
+      // ✅ Redirect to OTP verification if registration is successful
       if (response.status === 201 || response.status === 200) {
         navigate(`/verify-otp?email=${formData.email}`);
       } else {
         throw new Error('Registration failed.');
       }
     } catch (err) {
+      // 👇 Show error if API fails
       setError(err.response?.data?.message || err.message || 'An error occurred during sign-up.');
     } finally {
-      setLoading(false);
+      setLoading(false); // hide loading spinner
     }
   };
 
@@ -103,9 +108,11 @@ const Signup = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
 
+      {/* Error message (if any) */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleSubmit} autoComplete="off">
+        {/* Name Input */}
         <input
           type="text"
           name="name"
@@ -116,6 +123,7 @@ const Signup = () => {
           required
         />
 
+        {/* Email Input */}
         <input
           type="email"
           name="email"
@@ -126,6 +134,7 @@ const Signup = () => {
           required
         />
 
+        {/* Password Input */}
         <input
           type="password"
           name="password"
@@ -136,6 +145,7 @@ const Signup = () => {
           required
         />
 
+        {/* Confirm Password Input */}
         <input
           type="password"
           name="confirmPassword"
@@ -146,7 +156,7 @@ const Signup = () => {
           required
         />
 
-        {/* Dropdown Role Selector */}
+        {/* Role Dropdown */}
         <select
           name="role"
           value={formData.role}
@@ -159,7 +169,7 @@ const Signup = () => {
           <option value="mentor">Mentor</option>
         </select>
 
-        {/* Conditionally render based on role */}
+        {/* Conditional: College input for students */}
         {formData.role === 'student' && (
           <input
             type="text"
@@ -171,6 +181,7 @@ const Signup = () => {
           />
         )}
 
+        {/* Conditional: LinkedIn input for mentors */}
         {formData.role === 'mentor' && (
           <input
             type="text"
@@ -182,6 +193,7 @@ const Signup = () => {
           />
         )}
 
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
