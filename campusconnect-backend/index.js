@@ -12,6 +12,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";  // Added for security
 
 // Route Imports
 import authRoutes from "./routes/auth.js";
@@ -37,6 +38,8 @@ const prisma = new PrismaClient();
 const pool = new pkg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
+  max: 20, // Adjust max pool size
+  idleTimeoutMillis: 30000,
 });
 
 // File Upload Setup
@@ -48,6 +51,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
+  limits: { fileSize: 10 * 1024 * 1024 },  // Max file size of 10MB
   fileFilter: (_, file, cb) => {
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
     cb(null, allowedTypes.includes(file.mimetype));
@@ -59,6 +63,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Middleware Setup
+app.use(helmet());  // Security headers
 app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",   // Local development frontend
@@ -67,9 +72,6 @@ const allowedOrigins = [
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
-
-// Trust Proxy Setting (for express-rate-limit behind proxies)
-app.set('trust proxy', 1); // This allows express-rate-limit to work correctly behind proxies
 
 // Socket.IO Setup
 const io = new Server(server, {
@@ -213,7 +215,7 @@ app.post("/api/chat/save", async (req, res) => {
       create: {
         id: roomId,
         participants: {
-          connect: [{ id: senderId }, { id: receiverId }],
+          connect: [{ id: senderId }, { id: receiverId }], 
         },
       },
     });

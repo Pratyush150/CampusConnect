@@ -46,7 +46,7 @@ export const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error during user registration' });
   }
 };
 
@@ -65,11 +65,11 @@ export const loginUser = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
-    // Generate JWT token
+    // Generate JWT token (set expiration in config file)
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: process.env.JWT_EXPIRATION || '1h' }  // You can change this in your .env file
     );
 
     res.json({
@@ -78,7 +78,7 @@ export const loginUser = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error during login' });
   }
 };
 
@@ -91,7 +91,7 @@ export const getAllUsers = async (req, res) => {
     res.json({ users });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error fetching users' });
   }
 };
 
@@ -104,7 +104,7 @@ export const getMe = async (req, res) => {
     res.json({ user });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Error fetching user profile' });
   }
 };
 
@@ -140,7 +140,8 @@ export const updateUserProfile = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error during profile update' });
   }
 };
+
 

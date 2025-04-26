@@ -1,4 +1,3 @@
-// routes/userRoutes.js
 import express from "express";
 import { protect } from "../middleware/authMiddleware.js"; // Protect middleware to ensure only authorized users can access certain routes
 import {
@@ -27,5 +26,4 @@ router.get("/me", protect, getMe); // This route is protected, will return the l
 router.put("/profile", protect, updateUserProfile); // This route is protected, allows user to update their profile
 
 export default router;
-
 

@@ -23,6 +23,14 @@ const Login = () => {
       setError("Please fill in both email and password.");
       return false;
     }
+
+    // Email validation regex
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+
     return true;
   };
 
@@ -43,6 +51,7 @@ const Login = () => {
       localStorage.setItem("token", res.data.token);
       document.cookie = `refreshToken=${res.data.refreshToken}; path=/; Secure; HttpOnly`;
 
+      // Redirect to profile after login
       navigate("/profile"); // Redirect to profile after login
     } catch (err) {
       const message = err.response?.data?.message || "Invalid credentials, please try again.";

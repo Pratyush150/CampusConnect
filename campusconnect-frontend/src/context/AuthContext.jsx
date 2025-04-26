@@ -4,61 +4,52 @@ import API from '../services/api'; // Import API service for fetching user data
 
 const AuthContext = createContext();
 
-// Provider component to wrap your app and provide global auth state
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // This will hold the logged-in user's info
-  const [loading, setLoading] = useState(true); // For loading state before auth check
-  const [error, setError] = useState(null); // For handling errors during auth check
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const token = getAuthToken(); // Check if the user has a token
+    const token = getAuthToken();
     if (token) {
-      // If token exists, fetch user info using the token
       const fetchUser = async () => {
         try {
           const response = await API.get('/users/me', {
-            headers: { Authorization: `Bearer ${token}` }, // Pass token in the headers
+            headers: { Authorization: `Bearer ${token}` },
           });
-          setUser(response.data); // Set user data in state
+          setUser(response.data);
         } catch (error) {
           console.error('Failed to fetch user data:', error);
-          setUser(null); // Clear user on error (e.g., invalid token)
+          setUser(null);
           setError('Failed to authenticate. Please log in again.');
         }
       };
       fetchUser();
     } else {
-      setUser(null); // No token, set user as null
+      setUser(null);
       setError('No authentication token found.');
     }
-    setLoading(false); // Update loading state once auth is checked
+    setLoading(false);
   }, []);
 
-  // ✅ Login function - called after successful login
   const login = (token, userData) => {
-    setAuthToken(token);  // Store token in localStorage (or cookies)
-    setUser(userData);    // Update context state with user data
+    setAuthToken(token);
+    setUser(userData);
+    setError(null);  // Clear any existing error
   };
 
-  // ✅ Logout function
   const logout = () => {
-    removeAuthToken();  // Clear token from localStorage (or cookies)
-    setUser(null);       // Clear context state
+    removeAuthToken();
+    setUser(null);
+    setError(null);  // Clear error on logout
   };
 
   return (
     <AuthContext.Provider value={{ user, setUser, login, logout, loading, error }}>
-      {loading ? (
-        <div className="loading-spinner">
-          {/* Add loading spinner component or message */}
-          Loading...
-        </div>
-      ) : (
-        children
-      )}
+      {loading ? <div>Loading...</div> : children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to access auth context
 export const useAuth = () => useContext(AuthContext);
+
