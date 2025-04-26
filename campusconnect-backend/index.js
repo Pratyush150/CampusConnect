@@ -62,6 +62,7 @@ const upload = multer({
 const app = express();
 const server = http.createServer(app);
 
+app.set("trust proxy", 1);
 // Middleware Setup
 app.use(helmet());  // Security headers
 app.use(cookieParser());
