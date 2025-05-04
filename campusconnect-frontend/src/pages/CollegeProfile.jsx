@@ -50,9 +50,9 @@ const CollegeProfile = () => {
 
       {/* Join College Button */}
       <div className="mt-6">
-        <Button onClick={handleJoinCollege} className="text-white bg-blue-600 hover:bg-blue-700">
+        <button onClick={handleJoinCollege} className="text-white bg-blue-600 hover:bg-blue-700">
           Join College
-        </Button>
+        </button>
       </div>
 
       {/* Module Preview */}

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 // StudentProfile component displays student's profile information
 const StudentProfile = ({ user, updateUserProfile }) => {
