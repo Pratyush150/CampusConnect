@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+// MentorProfile component displays mentor's profile information
 const MentorProfile = ({ user, updateMentorProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -26,8 +27,13 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSaveProfile = () => {
-    updateMentorProfile({ ...formData, profilePic });
+  const handleSaveProfile = async () => {
+    // Make sure to send the updated profile data, including profile picture to the server
+    const profileData = {
+      ...formData,
+      profilePic, // Assuming profilePic is a base64 string or a URL from the file input
+    };
+    await updateMentorProfile(profileData);
     setIsEditing(false);
   };
 
@@ -122,12 +128,12 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Expertise</h2>
         <ul className="flex gap-2 mt-2 flex-wrap">
           {user.expertise?.length > 0 ? (
-            user.expertise.map((skill, index) => (
+            user.expertise.map((item, index) => (
               <li
                 key={index}
-                className="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded transition hover:bg-purple-200"
+                className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded transition hover:bg-blue-200"
               >
-                {skill}
+                {item}
               </li>
             ))
           ) : (
@@ -138,13 +144,10 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
 
       <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Availability</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300">
-          {user.availability || "Not specified"}
-        </p>
+        <p className="text-gray-600 dark:text-gray-300">{user.availability}</p>
       </div>
     </div>
   );
 };
 
 export default MentorProfile;
-

@@ -16,7 +16,7 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({ message: "Access token missing" });
+      return res.status(401).json({ message: "Authorization token is missing. Please log in." });
     }
 
     // 2. Verify token
@@ -50,10 +50,11 @@ export const protect = async (req, res, next) => {
     console.error("Protect middleware error:", err.message);
 
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({ message: "Token expired. Please refresh or log in again." });
+      return res.status(401).json({
+        message: "Token expired. Please log in again or refresh your session.",
+      });
     }
 
     return res.status(401).json({ message: "Invalid token" });
   }
 };
-

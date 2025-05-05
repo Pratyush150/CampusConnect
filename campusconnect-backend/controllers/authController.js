@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import sendEmail from "../utils/sendEmail.js";
 import verificationTemplate from "../utils/emailTemplates/verificationEmail.js";
-import passwordResetTemplate from "../utils/emailTemplates/passwordResetEmail.js";
 import { generateOTP } from "../utils/otpUtils.js";
 
 const prisma = new PrismaClient();
@@ -19,28 +18,44 @@ const generateToken = (payload, secret, expiresIn) => jwt.sign(payload, secret, 
 // REGISTER USER
 // ==============================
 export const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, college } = req.body;
+  const { name, email, password, college, type } = req.body;
+
+  if (!name || !email || !password || !type) {
+    return res.status(400).json({ message: "Name, email, password, and type are required" });
+  }
+
   const normalizedEmail = email.toLowerCase();
 
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-  if (existingUser) return res.status(400).json({ message: "User already exists" });
+  const existingUser = await prisma.user.findUnique({
+    where: { email: normalizedEmail },
+  });
+
+  if (existingUser) {
+    return res.status(400).json({ message: "User already exists" });
+  }
 
   const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
   const newUser = await prisma.user.create({
     data: {
       name,
       email: normalizedEmail,
       password: hashedPassword,
       college,
-      role: "USER",
+      role: "USER",       // Authorization
+      type,               // STUDENT or MENTOR
       isVerified: false,
     },
   });
 
   const otp = generateOTP();
+
   await prisma.user.update({
     where: { id: newUser.id },
-    data: { otp, otpExpiration: new Date(Date.now() + 10 * 60 * 1000) },
+    data: {
+      otp,
+      otpExpiration: new Date(Date.now() + 10 * 60 * 1000), // 10 min expiry
+    },
   });
 
   const otpUrl = `${process.env.CLIENT_URL}/verify-otp?otp=${otp}`;
@@ -48,8 +63,9 @@ export const registerUser = asyncHandler(async (req, res) => {
   await sendEmail({
     to: normalizedEmail,
     subject: "Verify your CampusConnect Account with OTP",
-    html: `<p>Your OTP for verification is: <strong>${otp}</strong></p><p><a href="${otpUrl}">Verify OTP here</a></p>`,
-    text: `Your OTP for verification is: ${otp}. Verify your email here: ${otpUrl}`,
+    html: `<p>Your OTP for verification is: <strong>${otp}</strong></p>
+           <p><a href="${otpUrl}">Verify OTP here</a></p>`,
+    text: `Your OTP is: ${otp}. Verify at: ${otpUrl}`,
   });
 
   const { password: _, otp: __, otpExpiration: ___, ...userSafe } = newUser;
@@ -110,6 +126,7 @@ export const resendOTP = asyncHandler(async (req, res) => {
 
   res.status(200).json({ message: "OTP resent successfully." });
 });
+
 
 // ==============================
 // VERIFY EMAIL TOKEN

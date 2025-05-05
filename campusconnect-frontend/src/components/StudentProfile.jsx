@@ -27,12 +27,17 @@ const StudentProfile = ({ user, updateUserProfile }) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSaveProfile = () => {
-    updateUserProfile({ ...formData, profilePic });
+  const handleSaveProfile = async () => {
+    // Make sure to send the updated profile data, including profile picture to the server
+    const profileData = {
+      ...formData,
+      profilePic, // Assuming profilePic is a base64 string or a URL from the file input
+    };
+    await updateUserProfile(profileData);
     setIsEditing(false);
   };
 
-  if (!user || !formData) {
+  if (!user) {
     return (
       <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-xl animate-pulse space-y-4">
         {/* Skeleton loading */}
@@ -143,44 +148,10 @@ const StudentProfile = ({ user, updateUserProfile }) => {
           </button>
         </div>
       )}
-
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Interests</h2>
-        <ul className="flex gap-2 mt-2 flex-wrap">
-          {user.interests?.length > 0 ? (
-            user.interests.map((interest, index) => (
-              <li
-                key={index}
-                className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded transition hover:bg-blue-200"
-              >
-                {interest}
-              </li>
-            ))
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-300">No interests listed.</p>
-          )}
-        </ul>
-      </div>
-
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Services</h2>
-        <ul className="flex gap-2 mt-2 flex-wrap">
-          {user.services?.length > 0 ? (
-            user.services.map((service, index) => (
-              <li
-                key={index}
-                className="bg-green-100 text-green-800 text-xs px-3 py-1 rounded transition hover:bg-green-200"
-              >
-                {service}
-              </li>
-            ))
-          ) : (
-            <p className="text-sm text-gray-600 dark:text-gray-300">No services offered.</p>
-          )}
-        </ul>
-      </div>
     </div>
   );
 };
 
 export default StudentProfile;
+
+

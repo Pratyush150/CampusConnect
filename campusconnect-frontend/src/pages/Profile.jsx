@@ -5,11 +5,12 @@ import MentorProfile from "../components/MentorProfile";
 const Profile = ({ user, updateUserProfile, updateMentorProfile }) => {
   return (
     <div>
-      {user?.role === "student" ? (
-        <StudentProfile user={user} updateUserProfile={updateUserProfile} />
-      ) : (
-        <MentorProfile user={user} updateMentorProfile={updateMentorProfile} />
-      )}
+     {user?.type === "STUDENT" ? (
+    <StudentProfile user={user} updateUserProfile={updateUserProfile} />
+     ) : (
+   <MentorProfile user={user} updateMentorProfile={updateMentorProfile} />
+    )}
+
     </div>
   );
 };

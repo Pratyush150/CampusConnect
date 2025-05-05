@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
-import { validateEmail, validatePassword } from "../utils/validators.js";  // Corrected import path
+import { validateEmail, validatePassword } from "../utils/validators.js";
 
 const prisma = new PrismaClient();
 
@@ -65,11 +65,11 @@ export const loginUser = async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
-    // Generate JWT token (set expiration in config file)
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRATION || '1h' }  // You can change this in your .env file
+      { expiresIn: process.env.JWT_EXPIRATION || '1h' }
     );
 
     res.json({
@@ -79,19 +79,6 @@ export const loginUser = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error during login' });
-  }
-};
-
-// ---------------------------
-// Get All Users (Temporary)
-// ---------------------------
-export const getAllUsers = async (req, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json({ users });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error fetching users' });
   }
 };
 
@@ -110,15 +97,37 @@ export const getMe = async (req, res) => {
         email: true,
         role: true,
         profilePic: true,
-        // add any other fields you want to expose
+        college: true,
       }
     });
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // If mentor, also fetch mentor fields
+    let mentorProfile = null;
+    if (user.role === UserRole.MENTOR) {
+      mentorProfile = await prisma.mentor.findUnique({
+        where: { userId },
+        select: {
+          bio: true,
+          category: true,
+          subcategory: true,
+          linkedin: true,
+          verified: true,
+        },
+      });
     }
 
-    res.json({ user });
+    // Send response excluding mentorProfile if it's null
+    const response = {
+      user: {
+        ...user,
+        ...(mentorProfile && { mentorProfile }) // Only include mentorProfile if it's not null
+      }
+    };
+
+    res.json(response);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching user profile' });
@@ -126,40 +135,67 @@ export const getMe = async (req, res) => {
 };
 
 
+
+
 // ---------------------------
 // Update User Profile
 // ---------------------------
 export const updateUserProfile = async (req, res) => {
-  const { name, college, bio, avatar, interests } = req.body;
+  const { name, college, avatar, bio, category, subcategory, linkedin } = req.body;
 
-  // Basic validation for required fields
-  if (!name || !college || !bio || !interests) {
-    return res.status(400).json({ message: "All fields are required" });
+  if (!name || !college) {
+    return res.status(400).json({ message: "Name and college are required" });
   }
 
   try {
-    const userId = req.user.id; // Extracted by middleware from JWT
+    const userId = req.user.id;
 
-    // Update user profile in database
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         name,
         college,
-        bio,
-        avatar,   // Ensure avatar handling is done properly
-        interests,
+        profilePic: avatar || undefined, // Handle avatar being null or undefined
       },
     });
 
+    // Handle mentor profile only if user is MENTOR
+    if (updatedUser.role === UserRole.MENTOR) {
+      const existingMentor = await prisma.mentor.findUnique({ where: { userId } });
+
+      if (existingMentor) {
+        await prisma.mentor.update({
+          where: { userId },
+          data: {
+            bio,
+            category,
+            subcategory,
+            linkedin,
+          },
+        });
+      } else {
+        await prisma.mentor.create({
+          data: {
+            userId,
+            bio,
+            category,
+            subcategory,
+            linkedin,
+          },
+        });
+      }
+    }
+
     res.json({
-      message: 'Profile updated successfully',
-      user: { ...updatedUser, password: undefined }, // exclude password
+      message: "Profile updated successfully",
+      user: { ...updatedUser, password: undefined },
     });
+
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error during profile update' });
+    res.status(500).json({ message: "Server error during profile update" });
   }
 };
+
 
 
