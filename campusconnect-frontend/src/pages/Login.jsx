@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
-import ResendVerification from "../components/ResendVerification"; // Ensure correct path
+import ResendVerification from "../components/ResendVerification";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,7 +17,7 @@ const Login = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      navigate("/profile"); // Redirect if already logged in
+      navigate("/profile");
     }
   }, [navigate]);
 
@@ -23,14 +26,11 @@ const Login = () => {
       setError("Please fill in both email and password.");
       return false;
     }
-
-    // Email validation regex
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(email)) {
       setError("Please enter a valid email address.");
       return false;
     }
-
     return true;
   };
 
@@ -46,19 +46,37 @@ const Login = () => {
 
     try {
       const res = await API.post("/auth/login", { email, password });
+      const { token, refreshToken, user } = res.data;
 
-      // Store access token in local storage and refresh token in cookies
-      localStorage.setItem("token", res.data.token);
-      document.cookie = `refreshToken=${res.data.refreshToken}; path=/; Secure; HttpOnly`;
+      // Store access token in localStorage
+      localStorage.setItem("token", token);
+      // Store refresh token in cookie
+      document.cookie = `refreshToken=${refreshToken}; path=/; Secure; SameSite=Lax`;
 
-      // Redirect to profile after login
-      navigate("/profile"); // Redirect to profile after login
+      // Update auth context and handle role-based redirection
+      if (user) {
+        login(token, user);
+        if (user.role === "mentor") {
+          navigate("/mentor-profile"); // Redirect to mentor profile
+        } else {
+          navigate("/student-profile"); // Redirect to student profile
+        }
+      } else {
+        const userRes = await API.get("/users/me"); // Token already attached in interceptor
+        login(token, userRes.data);
+        if (userRes.data.role === "mentor") {
+          navigate("/mentor-profile");
+        } else {
+          navigate("/student-profile");
+        }
+      }
     } catch (err) {
-      const message = err.response?.data?.message || "Invalid credentials, please try again.";
+      const message =
+        err.response?.data?.message || "Invalid credentials, please try again.";
       setError(message);
 
       if (message.toLowerCase().includes("verify your email")) {
-        setShowResend(true); // Show Resend Verification if not verified
+        setShowResend(true);
       }
     } finally {
       setLoading(false);
@@ -69,7 +87,6 @@ const Login = () => {
     <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
       <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
 
-      {/* Display error message if exists */}
       {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
       <form onSubmit={handleLogin} autoComplete="off">
@@ -105,7 +122,7 @@ const Login = () => {
           <p className="text-sm text-center text-gray-600 mb-2">
             Didn’t receive a verification email?
           </p>
-          <ResendVerification email={email} /> {/* Pass email if required for ResendVerification */}
+          <ResendVerification email={email} />
         </div>
       )}
     </div>
@@ -113,6 +130,7 @@ const Login = () => {
 };
 
 export default Login;
+
 
 
 

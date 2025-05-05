@@ -25,7 +25,7 @@ export const protect = async (req, res, next) => {
     // 3. Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 4. Get user from DB
+    // 4. Get user from DB using the decoded userId
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
     });
@@ -39,16 +39,21 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ message: "Please verify your email first." });
     }
 
-    // 6. Attach user to request and continue
+    // 6. Attach user to request and log for debugging
     req.user = user;
+    console.log("User attached to request:", req.user); // Debug log for verification
+
     next();
   } catch (err) {
     console.error("Protect middleware error:", err.message);
 
+    // Handle token expiration error specifically
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({ message: "Token expired. Please refresh or log in again." });
     }
 
+    // General invalid token error
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+

@@ -1,6 +1,5 @@
 import React from "react";
 import { Route, Navigate } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
 
 // Helper function to check if the user is authenticated
 const isAuthenticated = () => {
@@ -19,13 +18,11 @@ const isAuthenticated = () => {
   }
 };
 
-const PrivateRoute = ({ element: Element, ...rest }) => {
-  const navigate = useNavigate();
-
+const PrivateRoute = ({ element, ...rest }) => {
   return (
     <Route
       {...rest}
-      element={isAuthenticated() ? <Element /> : <Navigate to="/login" replace />}
+      element={isAuthenticated() ? element : <Navigate to="/login" replace />}
     />
   );
 };

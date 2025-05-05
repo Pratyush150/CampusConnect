@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
+import API from "./services/api";
 import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
 import { AuthProvider, useAuth } from "./context/AuthContext";
@@ -18,19 +18,17 @@ const AppWithAuthCheck = () => {
 
   // Check authentication state when the app loads
   useEffect(() => {
+
     const checkAuth = async () => {
       try {
-        const authenticated = await isAuthenticated();
-        if (authenticated) {
-          setUser(getAuthToken()); // Set user info if authenticated
-        } else {
-          setUser(null); // Clear user info if not authenticated
-        }
-      } catch (error) {
-        console.error("Authentication check failed:", error);
-        setUser(null); // Clear user info in case of error (e.g., invalid token)
+        const res = await API.get("/users/me"); // securely fetch user info
+        setUser(res.data.user); // store full user object
+      } catch (err) {
+        console.error("Auth check failed:", err);
+        setUser(null);
       }
     };
+    
     checkAuth();
   }, [setUser]);
 
