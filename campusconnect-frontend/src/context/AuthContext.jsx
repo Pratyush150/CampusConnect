@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import API from '../services/api'; // Unified API instance
-import { getAuthToken, setAuthToken, removeAuthToken } from '../services/api';
-// In src/context/AuthContext.jsx
+import { getAuthToken, setAuthToken, removeAuthToken } from '../services/api'; // Util functions for handling tokens
+import API from '../services/api'; // Import API service for fetching user data
+
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -14,34 +14,34 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       const fetchUser = async () => {
         try {
-          const response = await API.get('/users/me');
+          const response = await API.get('/users/me', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           setUser(response.data);
-        } catch (err) {
-          console.error('Failed to fetch user:', err);
+        } catch (error) {
+          console.error('Failed to fetch user data:', error);
           setUser(null);
-          setError('Session expired. Please log in again.');
-          removeAuthToken(); // Cleanup on failure
-        } finally {
-          setLoading(false);
+          setError('Failed to authenticate. Please log in again.');
         }
       };
       fetchUser();
     } else {
       setUser(null);
-      setLoading(false);
+      setError('No authentication token found.');
     }
+    setLoading(false);
   }, []);
 
   const login = (token, userData) => {
     setAuthToken(token);
     setUser(userData);
-    setError(null);
+    setError(null);  // Clear any existing error
   };
 
   const logout = () => {
     removeAuthToken();
     setUser(null);
-    setError(null);
+    setError(null);  // Clear error on logout
   };
 
   return (
@@ -52,3 +52,4 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
