@@ -17,11 +17,18 @@ const socket = io(backendURL, {
   reconnectionAttempts: 5,     // Limit reconnection attempts
   reconnectionDelay: 1000,     // Delay between reconnection attempts (1 second)
   reconnectionDelayMax: 5000,  // Maximum delay between reconnection attempts (5 seconds)
+  timeout: 10000,              // Timeout after 10 seconds if connection is not established
 });
 
 // ✅ Successful connection
 socket.on('connect', () => {
   console.log(`✅ Connected to socket server (id: ${socket.id})`);
+  
+  // Emit authentication if the token is available
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    socket.emit('authenticate', { token });
+  }
 });
 
 // ❌ Disconnection
@@ -37,19 +44,17 @@ socket.on('connect_error', (err) => {
 // Optional: Handle reconnect attempts
 socket.on('reconnect', (attempt) => {
   console.log(`🔄 Reconnected to socket server (attempt ${attempt})`);
+
+  // Reauthenticate on reconnect
+  const token = localStorage.getItem('authToken');
+  if (token) {
+    socket.emit('authenticate', { token });
+  }
 });
 
 // Optional: Handle reconnect error
 socket.on('reconnect_error', (err) => {
   console.error('⚠️ Socket reconnection error:', err.message);
-});
-
-// Optional: Emit authentication event after connection (if using authentication via sockets)
-socket.on('connect', () => {
-  const token = localStorage.getItem('authToken');  // Or get token from cookies, depending on your setup
-  if (token) {
-    socket.emit('authenticate', { token });
-  }
 });
 
 // Listen for authentication success or failure from the server
