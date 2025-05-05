@@ -1,16 +1,14 @@
 import React from "react";
-import StudentProfile from "../components/StudentProfile"; // Component for student profile
-import MentorProfile from "../components/MentorProfile";   // Component for mentor profile
+import StudentProfile from "../components/StudentProfile";
+import MentorProfile from "../components/MentorProfile";
 
-// Profile acts as a wrapper around both profile types
-const Profile = ({ user, updateUserProfile, mentor, updateMentorProfile }) => {
+const Profile = ({ user, updateUserProfile, updateMentorProfile }) => {
   return (
     <div>
-      {/* If user's role is student, show StudentProfile. Else show MentorProfile. */}
       {user?.role === "student" ? (
         <StudentProfile user={user} updateUserProfile={updateUserProfile} />
       ) : (
-        <MentorProfile mentor={user} updateMentorProfile={updateMentorProfile} />
+        <MentorProfile user={user} updateMentorProfile={updateMentorProfile} />
       )}
     </div>
   );

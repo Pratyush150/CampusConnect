@@ -1,16 +1,14 @@
 import React, { useState } from "react";
 
-
-// MentorProfile component displays mentor's profile information
-const MentorProfile = ({ mentor, updateMentorProfile }) => {
+const MentorProfile = ({ user, updateMentorProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: mentor?.name || "",
-    bio: mentor?.bio || "",
-    expertise: mentor?.expertise || [],
-    availability: mentor?.availability || "",
+    name: user?.name || "",
+    bio: user?.bio || "",
+    expertise: user?.expertise || [],
+    availability: user?.availability || "",
   });
-  const [profilePic, setProfilePic] = useState(mentor?.profilePic || "");
+  const [profilePic, setProfilePic] = useState(user?.profilePic || "");
 
   const handleProfileEdit = () => setIsEditing(!isEditing);
 
@@ -67,9 +65,9 @@ const MentorProfile = ({ mentor, updateMentorProfile }) => {
               className="text-2xl font-semibold text-gray-800 dark:text-white bg-transparent border-b border-gray-400 focus:outline-none"
             />
           ) : (
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">{mentor.name}</h1>
+            <h1 className="text-2xl font-semibold text-gray-800 dark:text-white">{user.name}</h1>
           )}
-          <p className="text-sm text-gray-600 dark:text-gray-300">{mentor.bio}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-300">{user.bio}</p>
         </div>
       </div>
 
@@ -123,13 +121,13 @@ const MentorProfile = ({ mentor, updateMentorProfile }) => {
       <div className="mt-6">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Expertise</h2>
         <ul className="flex gap-2 mt-2 flex-wrap">
-          {mentor.expertise?.length > 0 ? (
-            mentor.expertise.map((item, index) => (
+          {user.expertise?.length > 0 ? (
+            user.expertise.map((skill, index) => (
               <li
                 key={index}
-                className="bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded transition hover:bg-blue-200"
+                className="bg-purple-100 text-purple-800 text-xs px-3 py-1 rounded transition hover:bg-purple-200"
               >
-                {item}
+                {skill}
               </li>
             ))
           ) : (
@@ -137,8 +135,16 @@ const MentorProfile = ({ mentor, updateMentorProfile }) => {
           )}
         </ul>
       </div>
+
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Availability</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-300">
+          {user.availability || "Not specified"}
+        </p>
+      </div>
     </div>
   );
 };
 
 export default MentorProfile;
+
