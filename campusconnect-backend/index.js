@@ -12,7 +12,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import helmet from "helmet";  // Added for security
+import helmet from "helmet";
 
 // Route Imports
 import authRoutes from "./routes/auth.js";
@@ -28,21 +28,21 @@ import campusWallRoutes from "./routes/campusWallRoutes.js";
 import collegeRoutes from "./routes/collegeRoutes.js";
 import cloudinaryRoutes from "./routes/cloudinaryRoutes.js";
 
-// Environment Variables
+// Setup
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Prisma Client Setup
+// Prisma & Pool Setup
 const prisma = new PrismaClient();
 const pool = new pkg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
-  max: 20, // Adjust max pool size
+  max: 20,
   idleTimeoutMillis: 30000,
 });
 
-// File Upload Setup
+// Upload Directory & Multer Setup
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 const storage = multer.diskStorage({
@@ -51,28 +51,31 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },  // Max file size of 10MB
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_, file, cb) => {
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
     cb(null, allowedTypes.includes(file.mimetype));
   },
 });
 
-// Express Setup
+// Express & Middleware Setup
 const app = express();
 const server = http.createServer(app);
-
 app.set("trust proxy", 1);
-// Middleware Setup
-app.use(helmet());  // Security headers
+app.use(helmet());
 app.use(cookieParser());
-const allowedOrigins = [
-  "http://localhost:5173",   // Local development frontend
-  "https://zingy-licorice-136dfc.netlify.app",  // Production frontend (Netlify URL)
-];
-app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://zingy-licorice-136dfc.netlify.app",
+];
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+}));
 
 // Socket.IO Setup
 const io = new Server(server, {
@@ -84,7 +87,7 @@ const io = new Server(server, {
 });
 app.set("io", io);
 
-// Socket.IO Event Listeners
+// Socket.IO Events
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
@@ -136,11 +139,13 @@ io.on("connection", (socket) => {
   });
 
   socket.on("typing", ({ conversationId, userId }) => {
-    if (conversationId && userId) socket.to(conversationId).emit("userTyping", { userId });
+    if (conversationId && userId)
+      socket.to(conversationId).emit("userTyping", { userId });
   });
 
   socket.on("stopTyping", ({ conversationId, userId }) => {
-    if (conversationId && userId) socket.to(conversationId).emit("userStopTyping", { userId });
+    if (conversationId && userId)
+      socket.to(conversationId).emit("userStopTyping", { userId });
   });
 
   socket.on("disconnect", () => {
@@ -148,13 +153,14 @@ io.on("connection", (socket) => {
   });
 });
 
-// OpenAI Rate Limiting
+// Rate Limit for OpenAI
 const openAiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // Allow max 5 requests per minute
+  windowMs: 60 * 1000,
+  max: 5,
   message: "Too many requests to AI in a short time. Please wait.",
 });
 
+// OpenAI Chat Endpoint
 app.post("/api/chat", openAiLimiter, async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ error: "Message is required" });
@@ -185,14 +191,14 @@ app.post("/api/chat", openAiLimiter, async (req, res) => {
   }
 });
 
-// File Upload Route
+// File Upload for Chat
 app.post("/api/chat/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
   res.json({ fileUrl });
 });
 
-// Fetch Chat History Route
+// Chat History
 app.get("/api/chat/history/:roomId", async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -205,7 +211,7 @@ app.get("/api/chat/history/:roomId", async (req, res) => {
   }
 });
 
-// Save Chat Message Route
+// Save Message
 app.post("/api/chat/save", async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
@@ -216,7 +222,7 @@ app.post("/api/chat/save", async (req, res) => {
       create: {
         id: roomId,
         participants: {
-          connect: [{ id: senderId }, { id: receiverId }], 
+          connect: [{ id: senderId }, { id: receiverId }],
         },
       },
     });
@@ -236,10 +242,10 @@ app.post("/api/chat/save", async (req, res) => {
   }
 });
 
-// Health Check Route
+// Health Check
 app.get("/", (_, res) => res.send("CampusConnect Backend with Real-time Chat is Running 🚀"));
 
-// API Routes Setup
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
@@ -253,13 +259,13 @@ app.use("/api/campuswall", campusWallRoutes);
 app.use("/api", collegeRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
-// Global Error Handler
+// Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught Error:", err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-// Server Start
+// Start Server
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
