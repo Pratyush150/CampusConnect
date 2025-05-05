@@ -1,6 +1,6 @@
 import React from "react";
-import StudentProfile from "./components/StudentProfile"; // Component for student profile
-import MentorProfile from "./components/MentorProfile";   // Component for mentor profile
+import StudentProfile from "../components/StudentProfile"; // Component for student profile
+import MentorProfile from "../components/MentorProfile";   // Component for mentor profile
 
 // Profile acts as a wrapper around both profile types
 const Profile = ({ user, updateUserProfile, mentor, updateMentorProfile }) => {
