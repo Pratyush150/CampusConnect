@@ -100,13 +100,31 @@ export const getAllUsers = async (req, res) => {
 // ---------------------------
 export const getMe = async (req, res) => {
   try {
-    const user = req.user; // req.user is added by the protect middleware
+    const userId = req.user.id;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        profilePic: true,
+        // add any other fields you want to expose
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     res.json({ user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching user profile' });
   }
 };
+
 
 // ---------------------------
 // Update User Profile

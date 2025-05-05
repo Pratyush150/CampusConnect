@@ -4,42 +4,46 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const protect = async (req, res, next) => {
-  let token;
-
-  // 1. Get token from Authorization header or secure cookie
-  const authHeader = req.headers.authorization;
-  if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-
-  if (!token && req.cookies?.accessToken) {
-    token = req.cookies.accessToken;
-  }
-
-  // 2. If no token found, reject request
-  if (!token) {
-    return res.status(401).json({ message: "Access token missing" });
-  }
-
   try {
-    // 3. Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let token;
 
-    // 4. Get user from DB
+    // 1. Get token from header or cookie
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    } else if (req.cookies?.accessToken) {
+      token = req.cookies.accessToken;
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: "Access token missing" });
+    }
+
+    // 2. Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    // 3. Fetch minimal user data
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isVerified: true,
+        role: true,
+        profilePic: true,
+      },
     });
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    // 5. Ensure user is verified
     if (!user.isVerified) {
-      return res.status(401).json({ message: "Please verify your email first." });
+      return res.status(403).json({ message: "Please verify your email first." });
     }
 
-    // 6. Attach user to request and continue
     req.user = user;
     next();
   } catch (err) {
@@ -52,3 +56,4 @@ export const protect = async (req, res, next) => {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
