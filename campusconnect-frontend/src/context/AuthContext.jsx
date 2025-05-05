@@ -2,8 +2,6 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import API from '../services/api'; // Unified API instance
 import { getAuthToken, setAuthToken, removeAuthToken } from '../services/api';
 // In src/context/AuthContext.jsx
-import { getAuthToken } from "../services/api";  // Make sure this matches the export
-
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {

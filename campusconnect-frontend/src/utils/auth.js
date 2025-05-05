@@ -1,5 +1,6 @@
 // In src/utils/auth.js
-import jwtDecode from "jwt-decode";
+import * as jwtDecode from "jwt-decode";
+
 
 import API from '../services/api';  // API service to refresh the token
 
