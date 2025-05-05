@@ -1,160 +1,118 @@
-// Login.jsx
-
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import API from "../services/api";
+import ResendVerification from "../components/ResendVerification"; // Ensure correct path
 
 const Login = () => {
   const navigate = useNavigate();
-
-  // Form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
 
-  // Error messages
-  const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [submissionError, setSubmissionError] = useState("");
-
-  // Regex for basic email format
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      navigate("/profile"); // Redirect if already logged in
+    }
+  }, [navigate]);
 
   const validateForm = () => {
-    let valid = true;
-
-    // Email
-    if (!email.trim()) {
-      setEmailError("Email is required");
-      valid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError("Invalid email format");
-      valid = false;
-    } else {
-      setEmailError("");
+    if (!email || !password) {
+      setError("Please fill in both email and password.");
+      return false;
     }
 
-    // Password
-    if (!password) {
-      setPasswordError("Password is required");
-      valid = false;
-    } else {
-      setPasswordError("");
+    // Email validation regex
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
     }
 
-    return valid;
+    return true;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setSubmissionError("");
+    setError("");
+    setLoading(true);
 
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/v1/user/login",
-        {
-          email,
-          password,
-        }
-      );
+      const res = await API.post("/auth/login", { email, password });
 
-      const data = response.data;
+      // Store access token in local storage and refresh token in cookies
+      localStorage.setItem("token", res.data.token);
+      document.cookie = `refreshToken=${res.data.refreshToken}; path=/; Secure; HttpOnly`;
 
-      if (data.success) {
-        // Store user info in localStorage (including role if exists)
-        localStorage.setItem("userEmail", email);
-        if (data.role) {
-          localStorage.setItem("userRole", data.role);
-        }
+      // Redirect to profile after login
+      navigate("/profile"); // Redirect to profile after login
+    } catch (err) {
+      const message = err.response?.data?.message || "Invalid credentials, please try again.";
+      setError(message);
 
-        // Navigate to dashboard or homepage
-        navigate("/dashboard");
-      } else {
-        setSubmissionError(data.message || "Login failed");
+      if (message.toLowerCase().includes("verify your email")) {
+        setShowResend(true); // Show Resend Verification if not verified
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setSubmissionError(
-        error.response?.data?.message || "Something went wrong"
-      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white">
-          Login
-        </h2>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
+      <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Log In</h2>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="you@example.com"
-            />
-            {emailError && (
-              <p className="text-red-500 text-sm">{emailError}</p>
-            )}
-          </div>
+      {/* Display error message if exists */}
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="Your password"
-            />
-            {passwordError && (
-              <p className="text-red-500 text-sm">{passwordError}</p>
-            )}
-          </div>
-
-          {/* Submission error */}
-          {submissionError && (
-            <p className="text-red-600 text-sm text-center">
-              {submissionError}
-            </p>
+      <form onSubmit={handleLogin} autoComplete="off">
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          {loading ? (
+            <div className="spinner-border animate-spin h-5 w-5 border-t-2 border-b-2 border-white"></div>
+          ) : (
+            "Log In"
           )}
+        </button>
+      </form>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          >
-            Log In
-          </button>
-        </form>
-
-        <p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
-          Don't have an account?{" "}
-          <Link
-            to="/signup"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-          >
-            Sign Up
-          </Link>
-        </p>
-      </div>
+      {showResend && (
+        <div className="mt-6 border-t pt-4">
+          <p className="text-sm text-center text-gray-600 mb-2">
+            Didn’t receive a verification email?
+          </p>
+          <ResendVerification email={email} /> {/* Pass email if required for ResendVerification */}
+        </div>
+      )}
     </div>
   );
 };
 
 export default Login;
-
 
 
 

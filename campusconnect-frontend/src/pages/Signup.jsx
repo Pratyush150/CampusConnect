@@ -1,270 +1,207 @@
-// Signup.jsx
+// React imports
+import React, { useState } from 'react';
+import API from '../services/api'; // Axios instance for making API requests
+import { useNavigate } from 'react-router-dom'; // For redirecting after successful signup
 
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+// ✅ Utility: Email validation regex
+const validateEmail = (email) => {
+  const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return regex.test(email); // returns true if valid
+};
+
+// ✅ Utility: Password validation regex (uppercase, lowercase, digit, special char, min 6 chars)
+const validatePassword = (password) => {
+  const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+  return regex.test(password); // returns true if password is strong
+};
 
 const Signup = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Used for programmatic navigation
 
-  // Form field states
-  const [name, setName] = useState("");
-  const [collegeName, setCollegeName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  // ✅ Form state setup
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: '',           // student or mentor
+    college: '',        // required only for student
+    linkedin: '',       // required only for mentor
+  });
 
-  // Form errors
-  const [nameError, setNameError] = useState("");
-  const [collegeNameError, setCollegeNameError] = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [submissionError, setSubmissionError] = useState("");
+  const [error, setError] = useState('');     // to show error message if any
+  const [loading, setLoading] = useState(false); // shows loading text during API call
 
-  // Regex for email and phone validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[6-9]\d{9}$/;
-
-  const validateForm = () => {
-    let valid = true;
-
-    // Name
-    if (!name.trim()) {
-      setNameError("Name is required");
-      valid = false;
-    } else {
-      setNameError("");
-    }
-
-    // College Name
-    if (!collegeName.trim()) {
-      setCollegeNameError("College name is required");
-      valid = false;
-    } else {
-      setCollegeNameError("");
-    }
-
-    // Email
-    if (!email.trim()) {
-      setEmailError("Email is required");
-      valid = false;
-    } else if (!emailRegex.test(email)) {
-      setEmailError("Invalid email format");
-      valid = false;
-    } else {
-      setEmailError("");
-    }
-
-    // Phone
-    if (!phone.trim()) {
-      setPhoneError("Phone number is required");
-      valid = false;
-    } else if (!phoneRegex.test(phone)) {
-      setPhoneError("Invalid phone number");
-      valid = false;
-    } else {
-      setPhoneError("");
-    }
-
-    // Password
-    if (!password) {
-      setPasswordError("Password is required");
-      valid = false;
-    } else if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
-      valid = false;
-    } else {
-      setPasswordError("");
-    }
-
-    // Confirm Password
-    if (!confirmPassword) {
-      setConfirmPasswordError("Please confirm your password");
-      valid = false;
-    } else if (password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match");
-      valid = false;
-    } else {
-      setConfirmPasswordError("");
-    }
-
-    return valid;
+  // ✅ Handle input value change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ✅ Frontend form validation before submission
+  const validateForm = () => {
+    const { name, email, password, confirmPassword, role, college, linkedin } = formData;
+
+    if (!name || !email || !password || !confirmPassword || !role) {
+      setError('Please fill all required fields.');
+      return false;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return false;
+    }
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.');
+      return false;
+    }
+
+    if (!validatePassword(password)) {
+      setError('Password must be at least 6 characters long, contain an uppercase letter, one number, and a special character.');
+      return false;
+    }
+
+    // Conditional fields based on role
+    if (role === 'student' && !college) {
+      setError('College name is required for students.');
+      return false;
+    }
+
+    if (role === 'mentor' && !linkedin) {
+      setError('LinkedIn profile is required for mentors.');
+      return false;
+    }
+
+    return true; // All validations passed
+  };
+
+  // ✅ Handle submit button click
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault();     // prevent page reload
+    setError('');
+    setLoading(true);
 
-    // Reset overall error
-    setSubmissionError("");
+    if (!validateForm()) {
+      setLoading(false);   // stop loading if validation fails
+      return;
+    }
 
-    // Run validations
-    const isValid = validateForm();
-    if (!isValid) return;
-
-    // Submit to backend
     try {
-      const response = await axios.post(
-        "http://localhost:8000/api/v1/user/register",
-        {
-          name,
-          collegeName,
-          email,
-          phone,
-          password,
-        }
-      );
+      // 👇 Send POST request to backend API for registration
+      const response = await API.post('/auth/register', formData);
 
-      if (response.data.success) {
-        // Navigate to OTP verification page with email
-        navigate("/verify-otp", { state: { email } });
+      // ✅ Redirect to OTP verification if registration is successful
+      if (response.status === 201 || response.status === 200) {
+        navigate(`/verify-otp?email=${formData.email}`);
       } else {
-        setSubmissionError(response.data.message || "Signup failed");
+        throw new Error('Registration failed.');
       }
-    } catch (error) {
-      console.error("Signup error:", error);
-      setSubmissionError(
-        error.response?.data?.message || "Something went wrong"
-      );
+    } catch (err) {
+      // 👇 Show error if API fails
+      setError(err.response?.data?.message || err.message || 'An error occurred during sign-up.');
+    } finally {
+      setLoading(false); // hide loading spinner
     }
   };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800 dark:text-white">
-          Sign Up
-        </h2>
+    <div className="max-w-md mx-auto mt-12 p-6 bg-white dark:bg-gray-800 shadow rounded-xl">
+      <h2 className="text-2xl font-semibold text-center text-gray-800 dark:text-white mb-6">Sign Up</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Name
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="Your name"
-            />
-            {nameError && <p className="text-red-500 text-sm">{nameError}</p>}
-          </div>
+      {/* Error message (if any) */}
+      {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
-          {/* College Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              College Name
-            </label>
-            <input
-              type="text"
-              value={collegeName}
-              onChange={(e) => setCollegeName(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="Your college"
-            />
-            {collegeNameError && (
-              <p className="text-red-500 text-sm">{collegeNameError}</p>
-            )}
-          </div>
+      <form onSubmit={handleSubmit} autoComplete="off">
+        {/* Name Input */}
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          placeholder="Name"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="you@example.com"
-            />
-            {emailError && (
-              <p className="text-red-500 text-sm">{emailError}</p>
-            )}
-          </div>
+        {/* Email Input */}
+        <input
+          type="email"
+          name="email"
+          value={formData.email}
+          placeholder="Email Address"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
 
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="10-digit number"
-            />
-            {phoneError && (
-              <p className="text-red-500 text-sm">{phoneError}</p>
-            )}
-          </div>
+        {/* Password Input */}
+        <input
+          type="password"
+          name="password"
+          value={formData.password}
+          placeholder="Password"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
 
-          {/* Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="Minimum 6 characters"
-            />
-            {passwordError && (
-              <p className="text-red-500 text-sm">{passwordError}</p>
-            )}
-          </div>
+        {/* Confirm Password Input */}
+        <input
+          type="password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          placeholder="Confirm Password"
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          onChange={handleChange}
+          required
+        />
 
-          {/* Confirm Password */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md bg-gray-100 dark:bg-gray-700 border-transparent focus:border-gray-500 focus:bg-white dark:focus:bg-gray-600 focus:ring-0"
-              placeholder="Re-enter password"
-            />
-            {confirmPasswordError && (
-              <p className="text-red-500 text-sm">{confirmPasswordError}</p>
-            )}
-          </div>
+        {/* Role Dropdown */}
+        <select
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+          required
+        >
+          <option value="" disabled>Select Role</option>
+          <option value="student">Student</option>
+          <option value="mentor">Mentor</option>
+        </select>
 
-          {/* Submission error */}
-          {submissionError && (
-            <p className="text-red-600 text-sm text-center">
-              {submissionError}
-            </p>
-          )}
+        {/* Conditional: College input for students */}
+        {formData.role === 'student' && (
+          <input
+            type="text"
+            name="college"
+            value={formData.college}
+            placeholder="College Name"
+            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            onChange={handleChange}
+          />
+        )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
-          >
-            Sign Up
-          </button>
-        </form>
+        {/* Conditional: LinkedIn input for mentors */}
+        {formData.role === 'mentor' && (
+          <input
+            type="text"
+            name="linkedin"
+            value={formData.linkedin}
+            placeholder="LinkedIn Profile"
+            className="w-full p-3 mb-4 border rounded-lg text-gray-800"
+            onChange={handleChange}
+          />
+        )}
 
-        <p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
-          >
-            Log In
-          </Link>
-        </p>
-      </div>
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          {loading ? 'Signing Up...' : 'Sign Up'}
+        </button>
+      </form>
     </div>
   );
 };
