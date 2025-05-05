@@ -73,4 +73,10 @@ const getRefreshTokenFromCookie = () => {
   return "";
 };
 
+// Export the necessary functions
+export const getAuthToken = () => {
+  return localStorage.getItem("token");
+};
+
+// Export the API instance for making requests
 export default API;
