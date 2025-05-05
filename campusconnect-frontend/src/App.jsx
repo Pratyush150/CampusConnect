@@ -11,7 +11,7 @@ import Signup from "./pages/Signup";
 import VerifyOTP from "./pages/VerifyOTP";  // OTP verification page
 
 import CollegeDashboard from "./pages/CollegeDashboard";
-import CollegeProfile from "./pages/CollegeProfile";
+import Profile from "./pages/Profile";
 
 const AppWithAuthCheck = () => {
   const { user, setUser } = useAuth();
@@ -44,7 +44,7 @@ const AppWithAuthCheck = () => {
         <Route path="/verify-otp" element={<VerifyOTP />} /> {/* OTP page */}
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
-        <Route path="/profile" element={<PrivateRoute><CollegeProfile /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       </Routes>
     </div>
   );
