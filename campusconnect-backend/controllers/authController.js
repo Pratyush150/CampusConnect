@@ -147,7 +147,6 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 // LOGIN
-// LOGIN
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const normalizedEmail = email.toLowerCase();
@@ -175,18 +174,15 @@ export const loginUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days expiry
   });
 
-  // Ensure the 'role' is included in userSafe
   const { password: _, verificationToken: __, ...userSafe } = user;
 
-  // Return the user object along with the token
   res.status(200).json({
     message: "Login successful",
     token: accessToken,
     expiresIn: 3600,
-    user: { ...userSafe, role: user.role }, // Include role explicitly
+    user: userSafe,
   });
 });
-
 
 // REFRESH ACCESS TOKEN
 export const refreshAccessToken = asyncHandler(async (req, res) => {
