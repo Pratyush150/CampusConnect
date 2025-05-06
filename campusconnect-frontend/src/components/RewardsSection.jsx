@@ -1,7 +1,7 @@
 import React from 'react';
 
 // RewardsSection component for displaying top contributors
-const RewardsSection = ({ topContributors }) => {
+const RewardsSection = ({ topContributors = [] }) => {
   return (
     <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg shadow mb-4">
       <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">
@@ -12,16 +12,25 @@ const RewardsSection = ({ topContributors }) => {
           <p className="text-gray-500 dark:text-gray-400">No top contributors yet.</p>
         ) : (
           topContributors.slice(0, 3).map((contributor, idx) => (
-            <div key={idx} className="flex items-center space-x-4 p-2 bg-white dark:bg-gray-700 rounded-lg shadow">
+            <div
+              key={contributor.id || idx} // Prefer unique id if available
+              className="flex items-center space-x-4 p-2 bg-white dark:bg-gray-700 rounded-lg shadow"
+            >
               <div className="flex-shrink-0">
                 {/* Contributor Avatar */}
-                <img src={contributor.avatar} alt={`${contributor.name} avatar`} className="w-10 h-10 rounded-full" />
+                <img
+                  src={contributor.avatar || "/default-avatar.png"}
+                  alt={`${contributor.name || "User"} avatar`}
+                  className="w-10 h-10 rounded-full"
+                />
               </div>
               <div className="flex-grow">
                 {/* Contributor Name and Contribution Points */}
-                <h3 className="font-medium text-gray-800 dark:text-gray-100">{contributor.name}</h3>
+                <h3 className="font-medium text-gray-800 dark:text-gray-100">
+                  {contributor.name || "Unknown"}
+                </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {contributor.contributionPoints} Points
+                  {contributor.contributionPoints ?? 0} Points
                 </p>
               </div>
               {/* Displaying a badge based on their rank */}
@@ -45,5 +54,6 @@ const RewardsSection = ({ topContributors }) => {
 };
 
 export default RewardsSection;
+
 
 

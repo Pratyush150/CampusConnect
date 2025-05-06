@@ -2,6 +2,26 @@ import React, { useState } from "react";
 
 // MentorProfile component displays mentor's profile information
 const MentorProfile = ({ user, updateMentorProfile }) => {
+  // Guard clause: show skeleton loader if user is not yet loaded
+  if (!user) {
+    return (
+      <div className="p-6 bg-white dark:bg-gray-800 shadow rounded-xl animate-pulse space-y-4">
+        {/* Skeleton loading */}
+        <div className="flex items-center gap-4">
+          <div className="w-20 h-20 rounded-full bg-gray-300 dark:bg-gray-700" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/2"></div>
+            <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/3"></div>
+          </div>
+        </div>
+        <div className="space-y-3 mt-6">
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
+        </div>
+      </div>
+    );
+  }
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -151,3 +171,4 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
 };
 
 export default MentorProfile;
+

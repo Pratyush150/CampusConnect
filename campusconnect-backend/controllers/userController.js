@@ -206,8 +206,7 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
-// Or, if you're using module.exports
-// module.exports = { getAllUsers };
+
 
 
 

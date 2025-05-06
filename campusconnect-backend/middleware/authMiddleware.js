@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from '../prisma/prismaClient.js';
+ // Singleton Prisma client
 
 export const protect = async (req, res, next) => {
   try {
@@ -16,24 +15,19 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({ message: "Authorization token is missing. Please log in." });
+      return res.status(401).json({ message: "Authorization token missing" });
     }
 
     // 2. Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decoded.userId;
+    if (!decoded.userId || typeof decoded.userId !== "string") {
+      return res.status(401).json({ message: "Invalid token payload" });
+    }
 
-    // 3. Fetch minimal user data
+    // 3. Fetch user
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isVerified: true,
-        role: true,
-        profilePic: true,
-      },
+      where: { id: decoded.userId },
+      select: { id: true, name: true, isVerified: true, role: true },
     });
 
     if (!user) {
@@ -41,7 +35,7 @@ export const protect = async (req, res, next) => {
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({ message: "Please verify your email first." });
+      return res.status(403).json({ message: "Email not verified" });
     }
 
     req.user = user;
@@ -50,11 +44,14 @@ export const protect = async (req, res, next) => {
     console.error("Protect middleware error:", err.message);
 
     if (err.name === "TokenExpiredError") {
-      return res.status(401).json({
-        message: "Token expired. Please log in again or refresh your session.",
-      });
+      return res.status(401).json({ message: "Token expired. Refresh or log in." });
     }
 
-    return res.status(401).json({ message: "Invalid token" });
+    if (err.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid token signature" });
+    }
+
+    res.status(401).json({ message: "Authentication failed" });
   }
 };
+
