@@ -196,6 +196,18 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error during profile update" });
   }
 };
+// Correct way to export named function
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find(); // Assuming you're using some ORM like mongoose or Prisma
+    res.status(200).json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Or, if you're using module.exports
+// module.exports = { getAllUsers };
 
 
 
