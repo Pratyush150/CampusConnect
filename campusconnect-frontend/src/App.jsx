@@ -12,8 +12,6 @@ import Signup from "./pages/Signup";
 import VerifyOTP from "./pages/VerifyOTP";
 import CollegeDashboard from "./pages/CollegeDashboard";
 import Profile from "./pages/Profile";
-import StudentDashboard from "./pages/StudentDashboard";
-import MentorDashboard from "./pages/MentorDashboard";
 import LoadingSpinner from "./components/LoadingSpinner";
 
 const AppRoutes = () => {
@@ -55,16 +53,8 @@ const AppRoutes = () => {
 
         {/* Protected routes */}
         <Route element={<PrivateRoute />}>
-          <Route 
-            path="/dashboard" 
-            element={
-              user?.role === "MENTOR" ? 
-              <MentorDashboard /> : 
-              <StudentDashboard />
-            } 
-          />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/college" element={<CollegeDashboard />} />
+          <Route path="/dashboard" element={<CollegeDashboard />} />
+          <Route path="/profile" element={<Profile user={user} />} />
         </Route>
 
         {/* Fallback routes */}
