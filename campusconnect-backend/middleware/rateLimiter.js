@@ -22,3 +22,20 @@ export const authLimiter = rateLimit({
     return req.user?.isVerified;
   }
 });
+export const refreshLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Higher limit for refresh operations
+  message: {
+    code: "TOO_MANY_REFRESH_REQUESTS",
+    message: "Too many refresh requests, please try again in 15 minutes."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  handler: (req, res, next, options) => {
+    res.status(options.statusCode).json(options.message);
+  },
+  keyGenerator: (req) => {
+    return `${req.ip}_${req.headers["user-agent"]}`;
+  }
+});
