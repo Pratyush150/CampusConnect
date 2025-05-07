@@ -17,9 +17,8 @@ const router = express.Router();
 router.post("/register", authLimiter, registerUser);
 router.post("/login", authLimiter, loginUser);
 
-// Email Verification (POST for API, GET for email link if needed)
-router.post("/verify-email", verifyEmail);
-// router.get("/verify-email", verifyEmail); // Uncomment if you want GET for email links
+// Email Verification (with named parameter)
+router.post("/verify-email/:token", verifyEmail); // ✅ Fixed
 
 // OTP Verification
 router.post("/verify-otp", verifyOTP);

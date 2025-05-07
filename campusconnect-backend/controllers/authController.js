@@ -78,10 +78,10 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 // ==============================
-// VERIFY OTP (now POST for security)
+// VERIFY OTP (POST for security)
 // ==============================
 export const verifyOTP = asyncHandler(async (req, res) => {
-  const { otp } = req.body; // Changed from req.query to req.body
+  const { otp } = req.body;
 
   const user = await prisma.user.findFirst({
     where: {
@@ -129,10 +129,11 @@ export const resendOTP = asyncHandler(async (req, res) => {
 });
 
 // ==============================
-// VERIFY EMAIL TOKEN
+// VERIFY EMAIL TOKEN (GET or POST with :token param)
 // ==============================
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.query;
+  // Accept token from params (for Express 5+ route: /verify-email/:token)
+  const token = req.params.token || req.query.token;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -255,7 +256,7 @@ export const resendVerificationEmail = asyncHandler(async (req, res) => {
     data: { verificationToken },
   });
 
-  const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${process.env.CLIENT_URL}/verify-email/${verificationToken}`;
 
   await sendEmail({
     to: normalizedEmail,
@@ -288,4 +289,5 @@ export const resetPassword = asyncHandler(async (req, res) => {
     res.status(400).json({ message: "Invalid or expired token" });
   }
 });
+
 
