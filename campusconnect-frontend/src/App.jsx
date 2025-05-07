@@ -1,65 +1,89 @@
 import React, { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { jwtDecode } from "jwt-decode";
 
 import Navbar from "./components/Navbar";
 import PrivateRoute from "./components/PrivateRoute";
-import { AuthProvider, useAuth } from "./context/AuthContext";
-import { isAuthenticated, getAuthToken } from "./utils/auth";
+import { isAuthenticated } from "./utils/auth";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import VerifyOTP from "./pages/VerifyOTP";  // OTP verification page
-
+import VerifyOTP from "./pages/VerifyOTP";
 import CollegeDashboard from "./pages/CollegeDashboard";
 import Profile from "./pages/Profile";
+import StudentDashboard from "./pages/StudentDashboard";
+import MentorDashboard from "./pages/MentorDashboard";
+import LoadingSpinner from "./components/LoadingSpinner";
 
-const AppWithAuthCheck = () => {
+const AppRoutes = () => {
   const { user, setUser } = useAuth();
+  const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(true);
 
-  // Check authentication state when the app loads
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const authenticated = await isAuthenticated();
-        if (authenticated) {
-          setUser(getAuthToken()); // Set user info if authenticated
-        } else {
-          setUser(null); // Clear user info if not authenticated
+        if (await isAuthenticated()) {
+          const token = localStorage.getItem("token");
+          const decoded = jwtDecode(token);
+          setUser({ ...decoded, token });
         }
       } catch (error) {
+        localStorage.removeItem("token");
         console.error("Authentication check failed:", error);
-        setUser(null); // Clear user info in case of error (e.g., invalid token)
+      } finally {
+        setLoading(false);
       }
     };
+
     checkAuth();
   }, [setUser]);
 
+  if (loading) return <LoadingSpinner fullScreen />;
+
   return (
-    <div className="App">
+    <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/verify-otp" element={<VerifyOTP />} /> {/* OTP page */}
+        <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
+        
+        {/* Public routes */}
+        <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
+        <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <Signup />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+
         {/* Protected routes */}
-        <Route path="/dashboard" element={<PrivateRoute><CollegeDashboard /></PrivateRoute>} />
-        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route element={<PrivateRoute />}>
+          <Route 
+            path="/dashboard" 
+            element={
+              user?.role === "MENTOR" ? 
+              <MentorDashboard /> : 
+              <StudentDashboard />
+            } 
+          />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/college" element={<CollegeDashboard />} />
+        </Route>
+
+        {/* Fallback routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </div>
+    </>
   );
 };
 
-// Main App component wrapped with AuthProvider for global authentication state
 const App = () => (
   <AuthProvider>
     <Router>
-      <AppWithAuthCheck />
+      <AppRoutes />
     </Router>
   </AuthProvider>
 );
 
 export default App;
+
 
 
 

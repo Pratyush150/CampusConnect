@@ -19,7 +19,7 @@ const VerifyOTP = () => {
   useEffect(() => {
     if (otpFromUrl) {
       setOtp(otpFromUrl);
-      autoVerifyOtp(otpFromUrl); // Trigger auto-verification if OTP is in URL
+      autoVerifyOtp(otpFromUrl);
     }
   }, [otpFromUrl]);
 
@@ -30,11 +30,13 @@ const VerifyOTP = () => {
     setMessage("");
 
     try {
-      // Sending OTP to backend for verification (no redirection here)
-      const res = await API.get(`/auth/verify-otp?otp=${autoOtp}`);
+      // Use POST for security
+      const res = await API.post(`/auth/verify-otp`, { otp: autoOtp });
       setMessage(res.data.message || "OTP verified successfully");
 
-      // React handles the redirect
+      // Clear stored email after success
+      localStorage.removeItem("userEmail");
+
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
@@ -57,11 +59,12 @@ const VerifyOTP = () => {
     }
 
     try {
-      const res = await API.get(`/auth/verify-otp?otp=${otp}`);
+      // Use POST for security
+      const res = await API.post(`/auth/verify-otp`, { otp });
       setMessage(res.data.message || "OTP verified successfully");
       setOtp("");
-
-      setTimeout(() => navigate("/login"), 2000); // React handles the redirect
+      localStorage.removeItem("userEmail");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to verify OTP. Please try again.");
     } finally {
@@ -118,14 +121,15 @@ const VerifyOTP = () => {
       <div className="mt-4 text-center">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           Didn't receive an OTP?{" "}
-          <a
-            href="#"
+          <button
+            type="button"
             onClick={handleResendOTP}
-            className="text-blue-600 hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700 underline"
             disabled={resendLoading}
+            style={{ background: "none", border: "none", padding: 0, margin: 0, cursor: "pointer" }}
           >
             {resendLoading ? "Sending..." : "Resend OTP"}
-          </a>
+          </button>
         </p>
       </div>
     </div>
@@ -133,6 +137,7 @@ const VerifyOTP = () => {
 };
 
 export default VerifyOTP;
+
 
 
 

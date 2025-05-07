@@ -1,6 +1,5 @@
 import React from "react";
-import { Route, Navigate } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 
 // Helper function to check if the user is authenticated
 const isAuthenticated = () => {
@@ -8,26 +7,26 @@ const isAuthenticated = () => {
   if (!token) return false;
 
   try {
-    const decodedToken = JSON.parse(atob(token.split(".")[1])); // Decoding JWT token
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
     if (decodedToken.exp < Date.now() / 1000) {
-      localStorage.removeItem("token"); // Clear expired token
+      localStorage.removeItem("token");
       return false;
     }
     return true;
   } catch (err) {
-    return false; // If token is invalid
+    return false;
   }
 };
 
-const PrivateRoute = ({ element: Element, ...rest }) => {
-  const navigate = useNavigate();
-
-  return (
-    <Route
-      {...rest}
-      element={isAuthenticated() ? <Element /> : <Navigate to="/login" replace />}
-    />
-  );
+/**
+ * Usage in your routes:
+ * <Route element={<PrivateRoute />}>
+ *   <Route path="/profile" element={<Profile />} />
+ *   ...other protected routes...
+ * </Route>
+ */
+const PrivateRoute = () => {
+  return isAuthenticated() ? <Outlet /> : <Navigate to="/login" replace />;
 };
 
 export default PrivateRoute;

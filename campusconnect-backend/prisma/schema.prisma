@@ -35,6 +35,7 @@ model User {
   name              String
   email             String    @unique
   password          String
+  type              UserType
   college           String?
   profilePic        String?
   role              UserRole  @default(USER)
@@ -46,47 +47,46 @@ model User {
   updatedAt         DateTime  @updatedAt
   refreshToken      String?
 
-  // One-to-one relations (only define fields+references here)
-  studentDetails Student? @relation("UserStudent")
-  mentorDetails  Mentor?  @relation("UserMentorDetails")
+  // Relations
+  student           Student?
+  mentor            Mentor?
 
-  // One-to-many (user has many mentors they follow)
-  mentors Mentor[] @relation("UserMentors")
+  posts             Post[]
+  resources         Resource[]
+  events            Event[]
 
-  posts                Post[]
-  resources            Resource[]
-  events               Event[]
-  followed             Follow[]       @relation("Follower")
-  following            Follow[]       @relation("Following")
-  appliedOpportunities Opportunity[]  @relation("AppliedOpportunities")
-  savedOpportunities   Opportunity[]  @relation("SavedOpportunities")
-  postedOpportunities  Opportunity[]  @relation("PostedOpportunities")
-  conversations        Conversation[] @relation("ConversationParticipants")
-  messagesSent         Message[]      @relation("UserMessagesSent")
-  campusWalls          CampusWall[]
+  // Following system (User follows User)
+  followedBy        Follow[] @relation("Follower")   // Users who follow this user
+  following         Follow[] @relation("Following")  // Users this user follows
+
+  // Opportunities
+  appliedOpportunities Opportunity[] @relation("Application")
+  savedOpportunities   Opportunity[] @relation("SavedOpportunities")
+  postedOpportunities  Opportunity[] @relation("PostedOpportunities")
+
+  // Messaging
+  conversations     Conversation[] @relation("ConversationParticipants")
+  messages          Message[]      @relation("UserMessagesSent")
+  campusWalls       CampusWall[]
 }
 
 model Student {
-  userId String @id
-  user   User   @relation("UserStudent", fields: [userId], references: [id])
-  // Add student-specific fields here
+  userId    String  @id @unique
+  user      User    @relation(fields: [userId], references: [id])
+  major     String?
+  year      Int?
 }
 
 model Mentor {
-  id          Int      @id @default(autoincrement())
-  userId      String   @unique
-  user        User     @relation("UserMentorDetails", fields: [userId], references: [id])
+  userId      String  @id @unique
+  user        User    @relation(fields: [userId], references: [id])
   bio         String
   category    String
   subcategory String
-  verified    Boolean  @default(false)
+  verified    Boolean @default(false)
   linkedin    String?
-  email       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // This is the opposite field for the `User.mentors` one-to-many relation
-  followedBy User[] @relation("UserMentors")
 }
 
 model Post {
@@ -124,10 +124,10 @@ model Event {
 
 model Follow {
   id          String   @id @default(cuid())
-  followerId  String
-  followingId String
   follower    User     @relation("Follower", fields: [followerId], references: [id])
   following   User     @relation("Following", fields: [followingId], references: [id])
+  followerId  String
+  followingId String
   createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
@@ -142,17 +142,17 @@ model Opportunity {
   link        String
   postedById  String
   postedBy    User            @relation("PostedOpportunities", fields: [postedById], references: [id])
-  applicants  User[]          @relation("AppliedOpportunities")
+  applicants  User[]          @relation("Application")
   savedBy     User[]          @relation("SavedOpportunities")
   createdAt   DateTime        @default(now())
 }
 
 model Conversation {
-  id           String    @id @default(cuid())
-  participants User[]    @relation("ConversationParticipants")
+  id           String     @id @default(cuid())
+  participants User[]     @relation("ConversationParticipants")
   messages     Message[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model Message {
@@ -161,10 +161,10 @@ model Message {
   fileUrl        String?
   type           MessageType  @default(TEXT)
   isSeen         Boolean      @default(false)
-  senderId       String
   sender         User         @relation("UserMessagesSent", fields: [senderId], references: [id])
-  conversationId String
+  senderId       String
   conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String
   createdAt      DateTime     @default(now())
 }
 
@@ -179,8 +179,11 @@ model CampusWall {
 
 model College {
   id        Int      @id @default(autoincrement())
-  name      String
-  location  Json
+  name      String   @unique
+  address   String?
+  city      String?
+  state     String?
+  country   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

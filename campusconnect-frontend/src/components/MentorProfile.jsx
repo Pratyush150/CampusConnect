@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 
-// MentorProfile component displays mentor's profile information
 const MentorProfile = ({ user, updateMentorProfile }) => {
   // Guard clause: show skeleton loader if user is not yet loaded
   if (!user) {
@@ -26,12 +25,17 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
   const [formData, setFormData] = useState({
     name: user?.name || "",
     bio: user?.bio || "",
-    expertise: user?.expertise || [],
+    expertise: Array.isArray(user?.expertise) ? user.expertise : [],
     availability: user?.availability || "",
   });
   const [profilePic, setProfilePic] = useState(user?.profilePic || "");
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleProfileEdit = () => setIsEditing(!isEditing);
+  const handleProfileEdit = () => {
+    setIsEditing(!isEditing);
+    setSuccessMsg("");
+  };
 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
@@ -48,13 +52,19 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
   };
 
   const handleSaveProfile = async () => {
-    // Make sure to send the updated profile data, including profile picture to the server
+    setSaving(true);
+    setSuccessMsg("");
     const profileData = {
       ...formData,
-      profilePic, // Assuming profilePic is a base64 string or a URL from the file input
+      expertise: typeof formData.expertise === "string"
+        ? formData.expertise.split(",").map((item) => item.trim())
+        : formData.expertise,
+      profilePic,
     };
     await updateMentorProfile(profileData);
     setIsEditing(false);
+    setSaving(false);
+    setSuccessMsg("Profile updated successfully!");
   };
 
   return (
@@ -97,6 +107,10 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
         </div>
       </div>
 
+      {successMsg && (
+        <div className="mt-2 text-green-600 text-sm">{successMsg}</div>
+      )}
+
       <button
         onClick={handleProfileEdit}
         className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -117,11 +131,11 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
           <input
             type="text"
             name="expertise"
-            value={formData.expertise.join(", ")}
+            value={Array.isArray(formData.expertise) ? formData.expertise.join(", ") : formData.expertise}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                expertise: e.target.value.split(",").map((item) => item.trim()),
+                expertise: e.target.value,
               })
             }
             className="w-full p-3 border rounded-lg text-gray-800"
@@ -138,8 +152,9 @@ const MentorProfile = ({ user, updateMentorProfile }) => {
           <button
             onClick={handleSaveProfile}
             className="w-full p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            disabled={saving}
           >
-            Save Profile
+            {saving ? "Saving..." : "Save Profile"}
           </button>
         </div>
       )}

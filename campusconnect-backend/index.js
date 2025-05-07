@@ -4,15 +4,16 @@ import dotenv from "dotenv";
 import http from "http";
 import { Server } from "socket.io";
 import fetch from "node-fetch";
-import { PrismaClient } from "@prisma/client";
-import pkg from "pg";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import helmet from "helmet";  // Added for security
+import helmet from "helmet";
+
+// Import Prisma client singleton
+import { prisma } from "./prisma/prismaClient.js";
 
 // Route Imports
 import authRoutes from "./routes/auth.js";
@@ -33,27 +34,24 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Prisma Client Setup
-const prisma = new PrismaClient();
-const pool = new pkg.Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 20, // Adjust max pool size
-  idleTimeoutMillis: 30000,
-});
-
-// File Upload Setup
+// Ensure uploads directory exists
 const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+// File Upload Setup (with security)
+const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, uploadDir),
-  filename: (_, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+  filename: (_, file, cb) => {
+    // Sanitize filename
+    const sanitized = file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    cb(null, `${Date.now()}-${sanitized}`);
+  },
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },  // Max file size of 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: (_, file, cb) => {
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "application/pdf"];
     cb(null, allowedTypes.includes(file.mimetype));
   },
 });
@@ -63,18 +61,31 @@ const app = express();
 const server = http.createServer(app);
 
 app.set("trust proxy", 1);
-// Middleware Setup
-app.use(helmet());  // Security headers
+
+// --- SECURITY MIDDLEWARE ---
+app.use(helmet());
 app.use(cookieParser());
+
+// --- CORS CONFIGURATION ---
 const allowedOrigins = [
-  "http://localhost:5173",   // Local development frontend
-  "https://zingy-licorice-136dfc.netlify.app",  // Production frontend (Netlify URL)
+  "http://localhost:5173",
+  "https://zingy-licorice-136dfc.netlify.app",
 ];
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
+app.options("*", cors());
+
+// --- BODY PARSER ---
 app.use(express.json());
 app.use("/uploads", express.static(uploadDir));
 
-// Socket.IO Setup
+// --- SOCKET.IO SETUP ---
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -84,7 +95,7 @@ const io = new Server(server, {
 });
 app.set("io", io);
 
-// Socket.IO Event Listeners
+// --- SOCKET.IO EVENTS ---
 io.on("connection", (socket) => {
   console.log("🔌 Client connected:", socket.id);
 
@@ -94,7 +105,6 @@ io.on("connection", (socket) => {
 
   socket.on("sendMessage", async ({ roomId, message }) => {
     if (!roomId || !message?.senderId || !message?.conversationId) return;
-
     try {
       const saved = await prisma.message.create({
         data: {
@@ -106,12 +116,10 @@ io.on("connection", (socket) => {
         },
         include: { sender: true },
       });
-
       await prisma.conversation.update({
         where: { id: message.conversationId },
         data: { updatedAt: new Date() },
       });
-
       io.to(roomId).emit("receiveMessage", saved);
     } catch (err) {
       console.error("❌ Message save error:", err);
@@ -120,7 +128,6 @@ io.on("connection", (socket) => {
 
   socket.on("markSeen", async ({ conversationId, userId }) => {
     if (!conversationId || !userId) return;
-
     try {
       await prisma.message.updateMany({
         where: {
@@ -148,10 +155,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// OpenAI Rate Limiting
+// --- OPENAI RATE LIMITING ---
 const openAiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // Allow max 5 requests per minute
+  windowMs: 60 * 1000,
+  max: 5,
   message: "Too many requests to AI in a short time. Please wait.",
 });
 
@@ -185,14 +192,14 @@ app.post("/api/chat", openAiLimiter, async (req, res) => {
   }
 });
 
-// File Upload Route
+// --- FILE UPLOAD ROUTE ---
 app.post("/api/chat/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const fileUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
   res.json({ fileUrl });
 });
 
-// Fetch Chat History Route
+// --- FETCH CHAT HISTORY ROUTE ---
 app.get("/api/chat/history/:roomId", async (req, res) => {
   try {
     const messages = await prisma.message.findMany({
@@ -205,22 +212,20 @@ app.get("/api/chat/history/:roomId", async (req, res) => {
   }
 });
 
-// Save Chat Message Route
+// --- SAVE CHAT MESSAGE ROUTE ---
 app.post("/api/chat/save", async (req, res) => {
   try {
     const { senderId, receiverId, text, roomId } = req.body;
-
     const conversation = await prisma.conversation.upsert({
       where: { id: roomId },
       update: { updatedAt: new Date() },
       create: {
         id: roomId,
         participants: {
-          connect: [{ id: senderId }, { id: receiverId }], 
+          connect: [{ id: senderId }, { id: receiverId }],
         },
       },
     });
-
     const message = await prisma.message.create({
       data: {
         content: text,
@@ -228,7 +233,6 @@ app.post("/api/chat/save", async (req, res) => {
         conversationId: conversation.id,
       },
     });
-
     res.json({ success: true, message });
   } catch (err) {
     console.error(err);
@@ -236,10 +240,10 @@ app.post("/api/chat/save", async (req, res) => {
   }
 });
 
-// Health Check Route
+// --- HEALTH CHECK ROUTE ---
 app.get("/", (_, res) => res.send("CampusConnect Backend with Real-time Chat is Running 🚀"));
 
-// API Routes Setup
+// --- API ROUTES SETUP ---
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/posts", postRoutes);
@@ -253,13 +257,13 @@ app.use("/api/campuswall", campusWallRoutes);
 app.use("/api", collegeRoutes);
 app.use("/api/cloudinary", cloudinaryRoutes);
 
-// Global Error Handler
+// --- GLOBAL ERROR HANDLER ---
 app.use((err, req, res, next) => {
   console.error("❌ Uncaught Error:", err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-// Server Start
+// --- SERVER START ---
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);

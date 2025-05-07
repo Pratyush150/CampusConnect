@@ -4,25 +4,36 @@ import { PrismaClient } from '@prisma/client';
 import { validateEmail, validatePassword } from "../utils/validators.js";
 
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
 // ---------------------------
 // Register User Controller
 // ---------------------------
 export const registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, type, college, linkedin } = req.body;
 
-  // Validate email and password
+  // Validate required fields
+  if (!name || !email || !password || !type) {
+    return res.status(400).json({ message: 'Name, email, password, and type are required' });
+  }
   if (!validateEmail(email)) {
     return res.status(400).json({ message: 'Invalid email format' });
   }
-
   if (!validatePassword(password)) {
     return res.status(400).json({ message: 'Password must be at least 6 characters long, and include uppercase, lowercase, digits, and special characters.' });
+  }
+  if (type === "STUDENT" && !college) {
+    return res.status(400).json({ message: "College is required for students" });
+  }
+  if (type === "MENTOR" && !linkedin) {
+    return res.status(400).json({ message: "LinkedIn is required for mentors" });
   }
 
   try {
     // Check if the user already exists
-    const userExists = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase();
+    const userExists = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -34,15 +45,19 @@ export const registerUser = async (req, res) => {
     const user = await prisma.user.create({
       data: {
         name,
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
+        type, // "STUDENT" or "MENTOR"
+        college: type === "STUDENT" ? college : null,
+        linkedin: type === "MENTOR" ? linkedin : null,
       },
     });
 
     // Return created user without password
+    const { password: _, ...userSafe } = user;
     res.status(201).json({
       message: 'User created successfully',
-      user: { ...user, password: undefined },
+      user: userSafe,
     });
   } catch (error) {
     console.error(error);
@@ -57,24 +72,27 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    const normalizedEmail = email.toLowerCase();
     // Find user by email
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) return res.status(400).json({ message: 'User not found' });
 
     // Validate password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) return res.status(400).json({ message: 'Invalid password' });
 
-    // Generate JWT token
+    // Generate JWT token including user type
     const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRATION || '1h' }
+      { userId: user.id, type: user.type },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRATION }
     );
 
+    const { password: _, ...userSafe } = user;
     res.json({
       message: 'Login successful',
       token,
+      user: userSafe,
     });
   } catch (error) {
     console.error(error);
@@ -95,100 +113,60 @@ export const getMe = async (req, res) => {
         id: true,
         name: true,
         email: true,
-        role: true,
+        type: true,
         profilePic: true,
         college: true,
+        linkedin: true,
+        bio: true,
+        interests: true,
+        services: true,
+        expertise: true,
+        availability: true,
       }
     });
 
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // If mentor, also fetch mentor fields
-    let mentorProfile = null;
-    if (user.role === UserRole.MENTOR) {
-      mentorProfile = await prisma.mentor.findUnique({
-        where: { userId },
-        select: {
-          bio: true,
-          category: true,
-          subcategory: true,
-          linkedin: true,
-          verified: true,
-        },
-      });
-    }
-
-    // Send response excluding mentorProfile if it's null
-    const response = {
-      user: {
-        ...user,
-        ...(mentorProfile && { mentorProfile }) // Only include mentorProfile if it's not null
-      }
-    };
-
-    res.json(response);
-
+    res.json({ user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Error fetching user profile' });
   }
 };
 
-
-
-
 // ---------------------------
 // Update User Profile
 // ---------------------------
 export const updateUserProfile = async (req, res) => {
-  const { name, college, avatar, bio, category, subcategory, linkedin } = req.body;
+  const { name, college, profilePic, bio, interests, services, expertise, availability, linkedin } = req.body;
 
-  if (!name || !college) {
-    return res.status(400).json({ message: "Name and college are required" });
+  if (!name) {
+    return res.status(400).json({ message: "Name is required" });
   }
 
   try {
     const userId = req.user.id;
 
+    // Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         name,
         college,
-        profilePic: avatar || undefined, // Handle avatar being null or undefined
+        profilePic,
+        bio,
+        interests,
+        services,
+        expertise,
+        availability,
+        linkedin,
       },
     });
 
-    // Handle mentor profile only if user is MENTOR
-    if (updatedUser.role === UserRole.MENTOR) {
-      const existingMentor = await prisma.mentor.findUnique({ where: { userId } });
-
-      if (existingMentor) {
-        await prisma.mentor.update({
-          where: { userId },
-          data: {
-            bio,
-            category,
-            subcategory,
-            linkedin,
-          },
-        });
-      } else {
-        await prisma.mentor.create({
-          data: {
-            userId,
-            bio,
-            category,
-            subcategory,
-            linkedin,
-          },
-        });
-      }
-    }
-
+    const { password: _, ...userSafe } = updatedUser;
     res.json({
       message: "Profile updated successfully",
-      user: { ...updatedUser, password: undefined },
+      user: userSafe,
     });
 
   } catch (error) {
@@ -196,10 +174,23 @@ export const updateUserProfile = async (req, res) => {
     res.status(500).json({ message: "Server error during profile update" });
   }
 };
-// Correct way to export named function
+
+// ---------------------------
+// Get All Users (Admin/Debug)
+// ---------------------------
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find(); // Assuming you're using some ORM like mongoose or Prisma
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        type: true,
+        college: true,
+        linkedin: true,
+        profilePic: true,
+      }
+    });
     res.status(200).json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

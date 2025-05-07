@@ -5,6 +5,7 @@ dist/
 build/
 .next/
 *.log
+/uploads
 
 # OS/system files
 .DS_Store

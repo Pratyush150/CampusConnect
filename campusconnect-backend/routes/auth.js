@@ -1,5 +1,5 @@
 import express from "express";
-import { authLimiter } from "../middleware/rateLimiter.js";
+import { authLimiter, refreshLimiter } from "../middleware/rateLimiter.js";
 import {
   registerUser,
   loginUser,
@@ -13,39 +13,29 @@ import {
 
 const router = express.Router();
 
-// User Registration Route
-// Protect with rate limiter to prevent brute-force attempts
+// Registration & Login
 router.post("/register", authLimiter, registerUser);
-
-// User Login Route
-// Rate-limited login to avoid abuse
 router.post("/login", authLimiter, loginUser);
 
-// Email Verification Route
-// A GET request to verify the user's email address
-router.get("/verify-email", verifyEmail);
+// Email Verification (POST for API, GET for email link if needed)
+router.post("/verify-email", verifyEmail);
+// router.get("/verify-email", verifyEmail); // Uncomment if you want GET for email links
 
-// OTP Verification Route
-// A GET request to verify the OTP sent during email verification
-router.get("/verify-otp", verifyOTP);
+// OTP Verification
+router.post("/verify-otp", verifyOTP);
 
-// Resend OTP Route
-// Allows the user to resend an OTP for email verification
+// Resend OTP & Verification Email
 router.post("/resend-otp", authLimiter, resendOTP);
-
-// Refresh Token Route
-// Allows the user to refresh the access token, used for session renewal
-router.post("/refresh-token", refreshAccessToken);
-
-// Resend Verification Email Route
-// Allows a user to request another email verification if the first one was missed
 router.post("/resend-verification", authLimiter, resendVerificationEmail);
 
-// User Logout Route
-// Logs the user out by clearing the session or token
+// Refresh Token
+router.post("/refresh-token", refreshLimiter, refreshAccessToken);
+
+// Logout
 router.post("/logout", logoutUser);
 
 export default router;
+
 
 
 

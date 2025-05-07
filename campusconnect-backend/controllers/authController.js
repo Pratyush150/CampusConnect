@@ -42,8 +42,8 @@ export const registerUser = asyncHandler(async (req, res) => {
       email: normalizedEmail,
       password: hashedPassword,
       college,
-      role: "USER",       // Authorization
-      type,               // STUDENT or MENTOR
+      role: "USER",
+      type, // STUDENT or MENTOR
       isVerified: false,
     },
   });
@@ -68,7 +68,8 @@ export const registerUser = asyncHandler(async (req, res) => {
     text: `Your OTP is: ${otp}. Verify at: ${otpUrl}`,
   });
 
-  const { password: _, otp: __, otpExpiration: ___, ...userSafe } = newUser;
+  // Remove sensitive fields before sending user object
+  const { password: _, otp: __, otpExpiration: ___, verificationToken: ____, refreshToken: _____, ...userSafe } = newUser;
 
   res.status(201).json({
     message: "Registration successful. Please check your email for OTP.",
@@ -77,10 +78,10 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 // ==============================
-// VERIFY OTP
+// VERIFY OTP (now POST for security)
 // ==============================
 export const verifyOTP = asyncHandler(async (req, res) => {
-  const { otp } = req.query;
+  const { otp } = req.body; // Changed from req.query to req.body
 
   const user = await prisma.user.findFirst({
     where: {
@@ -127,7 +128,6 @@ export const resendOTP = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "OTP resent successfully." });
 });
 
-
 // ==============================
 // VERIFY EMAIL TOKEN
 // ==============================
@@ -166,8 +166,9 @@ export const loginUser = asyncHandler(async (req, res) => {
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) return res.status(400).json({ message: "Invalid email or password" });
 
-  const accessToken = generateToken({ userId: user.id }, JWT_SECRET, "1h");
-  const refreshToken = generateToken({ userId: user.id }, REFRESH_TOKEN_SECRET, "7d");
+  // Include user type in JWTs
+  const accessToken = generateToken({ userId: user.id, type: user.type }, JWT_SECRET, "1h");
+  const refreshToken = generateToken({ userId: user.id, type: user.type }, REFRESH_TOKEN_SECRET, "7d");
 
   await prisma.user.update({
     where: { id: user.id },
@@ -181,11 +182,13 @@ export const loginUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const { password: _, verificationToken: __, ...userSafe } = user;
+  // Remove sensitive fields before sending user object
+  const { password: _, verificationToken: __, otp: ___, otpExpiration: ____, refreshToken: _____, ...userSafe } = user;
 
   res.status(200).json({
     message: "Login successful",
     token: accessToken,
+    refreshToken,
     expiresIn: 3600,
     user: userSafe,
   });
@@ -204,7 +207,8 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   if (!user || user.refreshToken !== token)
     return res.status(403).json({ message: "Invalid refresh token" });
 
-  const newAccessToken = generateToken({ userId: user.id }, JWT_SECRET, "1h");
+  // Include user type in new access token
+  const newAccessToken = generateToken({ userId: user.id, type: user.type }, JWT_SECRET, "1h");
 
   res.status(200).json({ token: newAccessToken, expiresIn: 3600 });
 });
@@ -284,3 +288,4 @@ export const resetPassword = asyncHandler(async (req, res) => {
     res.status(400).json({ message: "Invalid or expired token" });
   }
 });
+

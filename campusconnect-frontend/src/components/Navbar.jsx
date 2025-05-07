@@ -1,30 +1,34 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Sun, Moon, Menu, LogOut } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; // Use your global auth context
 
 const Navbar = () => {
   const { theme, setTheme } = useTheme();
+  const { user, setUser } = useAuth(); // Use AuthContext for global state
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("user")); // Simple check if user is logged in or not
-  const navigate = useNavigate(); // For redirection
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Always check for token presence
+  const isLoggedIn = !!localStorage.getItem("token");
+
+  // Optional: update on location change (for SPAs)
+  useEffect(() => {}, [location]);
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
 
   const handleLogout = () => {
-    localStorage.removeItem("user"); // Clear user data from local storage
-    setIsLoggedIn(false); // Update logged-in state
-    navigate("/login"); // Redirect to login page after logout
+    localStorage.removeItem("token");
+    setUser(null); // Clear user from context
+    setIsMenuOpen(false);
+    navigate("/login");
   };
 
   return (
@@ -69,7 +73,6 @@ const Navbar = () => {
                 >
                   Sign Up
                 </Link>
-
                 {/* Explore Button */}
                 <button
                   onClick={closeMenu}
@@ -97,13 +100,15 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-white dark:bg-gray-900 p-4 space-y-4 transition-all duration-300 ease-in-out">
-          <Link
-            to="/signup"
-            onClick={closeMenu}
-            className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-          >
-            Sign Up
-          </Link>
+          {!isLoggedIn && (
+            <Link
+              to="/signup"
+              onClick={closeMenu}
+              className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+            >
+              Sign Up
+            </Link>
+          )}
           <button
             onClick={closeMenu}
             className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 rounded"

@@ -1,47 +1,51 @@
-// React imports
 import React, { useState } from 'react';
-import API from '../services/api'; // Axios instance for making API requests
-import { useNavigate } from 'react-router-dom'; // For redirecting after successful signup
+import API from '../services/api'; // Your Axios instance
+import { useNavigate } from 'react-router-dom';
 
-// ✅ Utility: Email validation regex
+// Email validation regex
 const validateEmail = (email) => {
   const regex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return regex.test(email); // returns true if valid
+  return regex.test(email);
 };
 
-// ✅ Utility: Password validation regex (uppercase, lowercase, digit, special char, min 6 chars)
+// Password validation regex (uppercase, lowercase, digit, special char, min 6 chars)
 const validatePassword = (password) => {
   const regex = /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-  return regex.test(password); // returns true if password is strong
+  return regex.test(password);
+};
+
+// LinkedIn validation
+const validateLinkedIn = (url) => {
+  const regex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-]+\/?$/;
+  return regex.test(url);
 };
 
 const Signup = () => {
-  const navigate = useNavigate(); // Used for programmatic navigation
+  const navigate = useNavigate();
 
-  // ✅ Form state setup
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: '',           // student or mentor
-    college: '',        // required only for student
-    linkedin: '',       // required only for mentor
+    type: '',      // 'STUDENT' or 'MENTOR'
+    college: '',   // required for students
+    linkedin: '',  // required for mentors
   });
 
-  const [error, setError] = useState('');     // to show error message if any
-  const [loading, setLoading] = useState(false); // shows loading text during API call
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // ✅ Handle input value change
+  // Handle input value change
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ✅ Frontend form validation before submission
+  // Frontend form validation before submission
   const validateForm = () => {
-    const { name, email, password, confirmPassword, role, college, linkedin } = formData;
+    const { name, email, password, confirmPassword, type, college, linkedin } = formData;
 
-    if (!name || !email || !password || !confirmPassword || !role) {
+    if (!name || !email || !password || !confirmPassword || !type) {
       setError('Please fill all required fields.');
       return false;
     }
@@ -61,46 +65,65 @@ const Signup = () => {
       return false;
     }
 
-    // Conditional fields based on role
-    if (role === 'student' && !college) {
+    if (!['STUDENT', 'MENTOR'].includes(type)) {
+      setError('Please select a valid role.');
+      return false;
+    }
+
+    if (type === 'STUDENT' && !college) {
       setError('College name is required for students.');
       return false;
     }
 
-    if (role === 'mentor' && !linkedin) {
-      setError('LinkedIn profile is required for mentors.');
-      return false;
+    if (type === 'MENTOR') {
+      if (!linkedin) {
+        setError('LinkedIn profile is required for mentors.');
+        return false;
+      }
+      if (!validateLinkedIn(linkedin)) {
+        setError('Please enter a valid LinkedIn profile URL.');
+        return false;
+      }
     }
 
-    return true; // All validations passed
+    return true;
   };
 
-  // ✅ Handle submit button click
+  // Handle submit button click
   const handleSubmit = async (e) => {
-    e.preventDefault();     // prevent page reload
+    e.preventDefault();
     setError('');
     setLoading(true);
 
     if (!validateForm()) {
-      setLoading(false);   // stop loading if validation fails
+      setLoading(false);
       return;
     }
 
     try {
-      // 👇 Send POST request to backend API for registration
-      const response = await API.post('/auth/register', formData);
+      // Prepare payload for backend
+      const payload = {
+        ...formData,
+        // If your backend expects 'role' instead of 'type', adjust here:
+        // role: formData.type
+      };
 
-      // ✅ Redirect to OTP verification if registration is successful
+      const response = await API.post('/auth/register', payload);
+
       if (response.status === 201 || response.status === 200) {
-        navigate(`/verify-otp?email=${formData.email}`);
+        navigate(`/verify-otp?email=${formData.email}&type=${formData.type}`);
       } else {
         throw new Error('Registration failed.');
       }
     } catch (err) {
-      // 👇 Show error if API fails
-      setError(err.response?.data?.message || err.message || 'An error occurred during sign-up.');
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'An error occurred during sign-up.'
+      );
     } finally {
-      setLoading(false); // hide loading spinner
+      setLoading(false);
     }
   };
 
@@ -158,19 +181,19 @@ const Signup = () => {
 
         {/* Role Dropdown */}
         <select
-          name="role"
-          value={formData.role}
+          name="type"
+          value={formData.type}
           onChange={handleChange}
           className="w-full p-3 mb-4 border rounded-lg text-gray-800"
           required
         >
           <option value="" disabled>Select Role</option>
-          <option value="student">Student</option>
-          <option value="mentor">Mentor</option>
+          <option value="STUDENT">Student</option>
+          <option value="MENTOR">Mentor</option>
         </select>
 
         {/* Conditional: College input for students */}
-        {formData.role === 'student' && (
+        {formData.type === 'STUDENT' && (
           <input
             type="text"
             name="college"
@@ -178,18 +201,21 @@ const Signup = () => {
             placeholder="College Name"
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
+            required
           />
         )}
 
         {/* Conditional: LinkedIn input for mentors */}
-        {formData.role === 'mentor' && (
+        {formData.type === 'MENTOR' && (
           <input
-            type="text"
+            type="url"
             name="linkedin"
             value={formData.linkedin}
-            placeholder="LinkedIn Profile"
+            placeholder="LinkedIn Profile URL (e.g. https://linkedin.com/in/yourprofile)"
             className="w-full p-3 mb-4 border rounded-lg text-gray-800"
             onChange={handleChange}
+            required
+            pattern="https?://(www\.)?linkedin\.com/in/.*"
           />
         )}
 
@@ -207,6 +233,7 @@ const Signup = () => {
 };
 
 export default Signup;
+
 
 
 

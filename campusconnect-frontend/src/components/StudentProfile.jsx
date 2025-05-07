@@ -1,17 +1,21 @@
 import React, { useState } from "react";
 
-// StudentProfile component displays student's profile information
 const StudentProfile = ({ user, updateUserProfile }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || "",
     bio: user?.bio || "",
-    interests: user?.interests || [],
-    services: user?.services || [],
+    interests: Array.isArray(user?.interests) ? user.interests : [],
+    services: Array.isArray(user?.services) ? user.services : [],
   });
   const [profilePic, setProfilePic] = useState(user?.profilePic || "");
+  const [saving, setSaving] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const handleProfileEdit = () => setIsEditing(!isEditing);
+  const handleProfileEdit = () => {
+    setIsEditing(!isEditing);
+    setSuccessMsg("");
+  };
 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
@@ -28,13 +32,22 @@ const StudentProfile = ({ user, updateUserProfile }) => {
   };
 
   const handleSaveProfile = async () => {
-    // Make sure to send the updated profile data, including profile picture to the server
+    setSaving(true);
+    setSuccessMsg("");
     const profileData = {
       ...formData,
-      profilePic, // Assuming profilePic is a base64 string or a URL from the file input
+      interests: typeof formData.interests === "string"
+        ? formData.interests.split(",").map((item) => item.trim())
+        : formData.interests,
+      services: typeof formData.services === "string"
+        ? formData.services.split(",").map((item) => item.trim())
+        : formData.services,
+      profilePic,
     };
     await updateUserProfile(profileData);
     setIsEditing(false);
+    setSaving(false);
+    setSuccessMsg("Profile updated successfully!");
   };
 
   if (!user) {
@@ -97,6 +110,10 @@ const StudentProfile = ({ user, updateUserProfile }) => {
         </div>
       </div>
 
+      {successMsg && (
+        <div className="mt-2 text-green-600 text-sm">{successMsg}</div>
+      )}
+
       <button
         onClick={handleProfileEdit}
         className="mt-4 w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -117,11 +134,11 @@ const StudentProfile = ({ user, updateUserProfile }) => {
           <input
             type="text"
             name="interests"
-            value={formData.interests.join(", ")}
+            value={Array.isArray(formData.interests) ? formData.interests.join(", ") : formData.interests}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                interests: e.target.value.split(",").map((item) => item.trim()),
+                interests: e.target.value,
               })
             }
             className="w-full p-3 border rounded-lg text-gray-800"
@@ -130,11 +147,11 @@ const StudentProfile = ({ user, updateUserProfile }) => {
           <input
             type="text"
             name="services"
-            value={formData.services.join(", ")}
+            value={Array.isArray(formData.services) ? formData.services.join(", ") : formData.services}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                services: e.target.value.split(",").map((item) => item.trim()),
+                services: e.target.value,
               })
             }
             className="w-full p-3 border rounded-lg text-gray-800"
@@ -143,8 +160,9 @@ const StudentProfile = ({ user, updateUserProfile }) => {
           <button
             onClick={handleSaveProfile}
             className="w-full p-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            disabled={saving}
           >
-            Save Profile
+            {saving ? "Saving..." : "Save Profile"}
           </button>
         </div>
       )}
